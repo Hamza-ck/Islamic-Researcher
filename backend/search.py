@@ -71,6 +71,9 @@ def search(query: str, top_k=10, types=None, collections=None, min_grade=None):
     results = []
     for h in hits:
         payload = h.payload
+        text_content = payload.get("text", "")
+        if not text_content or not text_content.strip():
+            continue
         if min_grade and payload["type"] == "hadith":
             rank = GRADE_RANK.get(payload["metadata"].get("grade_category", "unclassified"), -1)
             if rank < min_rank:
@@ -78,7 +81,7 @@ def search(query: str, top_k=10, types=None, collections=None, min_grade=None):
         results.append({
             "id": payload["id"],
             "type": payload["type"],
-            "text": payload["text"],
+            "text": text_content,
             "citation": payload["citation"],
             "score": h.score,
             "arabic": payload.get("arabic"),

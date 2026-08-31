@@ -85,7 +85,7 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-[#06080e] text-slate-100 flex flex-col relative overflow-x-hidden font-sans">
-      
+
       {/* Ambient Glassmorphic Glow Orbs */}
       <div className="fixed top-0 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -z-10 animate-pulse" />
       <div className="fixed bottom-1/4 right-1/4 w-[32rem] h-[32rem] bg-indigo-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
@@ -101,7 +101,7 @@ export function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8">
-        
+
         {/* Search Widget */}
         <section>
           <SearchApparatus
@@ -120,7 +120,7 @@ export function App() {
 
         {/* Loading Spinner */}
         {isLoading && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="py-16 text-center space-y-4"
@@ -142,7 +142,7 @@ export function App() {
         {/* Results Section */}
         {!isLoading && hasSearched && (
           <div className="space-y-8">
-            
+
             {/* AI Synthesized Answer (Shown in 'ask' mode) */}
             <AnimatePresence>
               {mode === 'ask' && synthesisAnswer && (
@@ -180,7 +180,7 @@ export function App() {
 
             {/* List of Passages */}
             {results.length > 0 ? (
-              <motion.div 
+              <motion.div
                 layout
                 className="space-y-5"
               >
@@ -195,7 +195,7 @@ export function App() {
                 ))}
               </motion.div>
             ) : (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="p-12 text-center glass-card rounded-3xl border border-white/10 space-y-3"
@@ -221,8 +221,8 @@ export function App() {
           <p className="text-slate-300 font-semibold text-xs tracking-wide">
             Islamic Research Engine • Grounded Scripture & Verified Hadith
           </p>
-          <p className="text-[11px] text-slate-500">
-            Powered by Multilingual Vector Embeddings, Qdrant Cloud & Google Gemini
+          <p className="text-[11px] text-slate-400">
+            Quran (Arabic & Translations) • Canonical Hadith • Classical Tafsir
           </p>
         </div>
       </footer>
