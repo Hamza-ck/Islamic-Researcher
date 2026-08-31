@@ -88,7 +88,8 @@ def gradio_ask(query: str, top_k: int):
 
     try:
         import llm
-        answer = llm.synthesize(query, passages)
+        result = llm.synthesize(query, passages)
+        answer = result.answer
     except Exception as e:
         answer = f"❌ LLM Synthesis Error: {e}"
 
@@ -233,11 +234,11 @@ def ask_endpoint(req: AskRequest):
 
     try:
         import llm
-        answer = llm.synthesize(req.query, passages)
+        result = llm.synthesize(req.query, passages)
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"LLM synthesis failed: {e}")
 
-    return {"answer": answer, "sources": passages}
+    return {"answer": result.answer, "sources": passages}
 
 
 # Launch the server natively (Space runner executes demo.launch())

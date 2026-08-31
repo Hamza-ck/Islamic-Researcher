@@ -1,4 +1,4 @@
-import { RawSearchResult, SearchMode, FolioFilterState, AskResponse, SearchResponse } from '../types';
+import { RawSearchResult, SearchMode, FolioFilterState, SynthesisOptions, SynthesisMetadata, AskResponse, SearchResponse } from '../types';
 import { MOCK_CORPUS, SYNTHESIS_PRESETS } from '../data/mockCorpus';
 
 const STORAGE_KEY_BASE_URL = 'folio_backend_url';
@@ -101,13 +101,16 @@ export interface QueryExecutionResult {
   results: RawSearchResult[];
   answer?: string;
   error?: string;
+  metadata?: SynthesisMetadata | null;
+  queryId?: string | null;
 }
 
 export async function executeFolioQuery(
   mode: SearchMode,
   query: string,
   filterState: FolioFilterState,
-  topK: number = 8
+  topK: number = 8,
+  synthesisOptions?: SynthesisOptions,
 ): Promise<QueryExecutionResult> {
   const baseUrl = getStoredBackendUrl();
   const trimmed = query.trim();
@@ -115,7 +118,7 @@ export async function executeFolioQuery(
   // Try live backend first
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     if (mode === 'search') {
       const payload: any = {
@@ -143,10 +146,17 @@ export async function executeFolioQuery(
       }
     } else {
       // mode === 'ask'
-      const payload = {
+      const payload: any = {
         query: trimmed,
         top_k: Math.min(topK, 6),
       };
+
+      // Pass synthesis options if provided
+      if (synthesisOptions) {
+        payload.response_style = synthesisOptions.responseStyle;
+        payload.detail_level = synthesisOptions.detailLevel;
+        payload.temperature = synthesisOptions.temperature;
+      }
 
       const res = await fetch(`${baseUrl}/ask`, {
         method: 'POST',
@@ -162,6 +172,8 @@ export async function executeFolioQuery(
           isLive: true,
           results: data.sources || [],
           answer: data.answer,
+          metadata: data.metadata || null,
+          queryId: data.query_id || null,
         };
       }
     }
@@ -193,3 +205,31 @@ export async function executeFolioQuery(
     results: fallbackResults,
   };
 }
+
+
+/**
+ * Submit user feedback on a synthesized answer.
+ */
+export async function submitFeedback(
+  queryId: string,
+  rating: number,
+  comment?: string,
+): Promise<boolean> {
+  const baseUrl = getStoredBackendUrl();
+  try {
+    const res = await fetch(`${baseUrl}/feedback`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query_id: queryId,
+        rating,
+        comment: comment || null,
+      }),
+    });
+    return res.ok;
+  } catch {
+    console.warn('Failed to submit feedback — backend may be offline.');
+    return false;
+  }
+}
+

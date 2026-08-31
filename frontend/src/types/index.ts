@@ -2,6 +2,10 @@ export type SourceType = 'quran' | 'hadith' | 'tafsir';
 
 export type GradeCategory = 'sahih' | 'hasan' | 'daif' | 'unclassified';
 
+export type ResponseStyle = 'concise' | 'scholarly' | 'detailed';
+
+export type DetailLevel = 'brief' | 'standard' | 'comprehensive';
+
 export interface ScholarGrade {
   scholar: string;
   grade: string;
@@ -36,9 +40,26 @@ export interface SearchResponse {
   results: RawSearchResult[];
 }
 
+export interface SynthesisMetadata {
+  confidence: string;       // "high" | "medium" | "low"
+  model_used: string;
+  tokens_used: number;
+  latency_ms: number;
+  response_style: string;
+  temperature: number;
+}
+
 export interface AskResponse {
   answer: string;
   sources: RawSearchResult[];
+  metadata?: SynthesisMetadata | null;
+  query_id?: string | null;
+}
+
+export interface SynthesisOptions {
+  responseStyle: ResponseStyle;
+  detailLevel: DetailLevel;
+  temperature: number;
 }
 
 export interface FolioFilterState {
@@ -54,3 +75,4 @@ export interface BackendConfig {
   useMockOnFailure: boolean;
   isCustomUrl: boolean;
 }
+

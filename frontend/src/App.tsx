@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RawSearchResult, SearchMode, FolioFilterState } from './types';
-import { executeFolioQuery, checkBackendHealth, getStoredBackendUrl } from './services/api';
+import { RawSearchResult, SearchMode, FolioFilterState, SynthesisOptions, SynthesisMetadata } from './types';
+import { executeFolioQuery, checkBackendHealth, getStoredBackendUrl, submitFeedback } from './services/api';
 import { FolioHeader } from './components/FolioHeader';
 import { SearchApparatus } from './components/SearchApparatus';
 import { FolioCard } from './components/FolioCard';
@@ -27,6 +27,15 @@ export function App() {
   const [arabicFontSize, setArabicFontSize] = useState<'normal' | 'large' | 'huge'>('normal');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
+  // Synthesis options & metadata
+  const [synthesisOptions, setSynthesisOptions] = useState<SynthesisOptions>({
+    responseStyle: 'scholarly',
+    detailLevel: 'standard',
+    temperature: 0.3,
+  });
+  const [synthesisMetadata, setSynthesisMetadata] = useState<SynthesisMetadata | null>(null);
+  const [lastQueryId, setLastQueryId] = useState<string | null>(null);
+
   // Check backend health on initial load
   const verifyBackend = useCallback(async () => {
     const url = getStoredBackendUrl();
@@ -48,18 +57,28 @@ export function App() {
     setIsLoading(true);
     setHasSearched(true);
     setHighlightedFolioId(null);
+    setSynthesisMetadata(null);
+    setLastQueryId(null);
 
     try {
-      const response = await executeFolioQuery(activeMode, activeQuery, filterState);
+      const response = await executeFolioQuery(
+        activeMode,
+        activeQuery,
+        filterState,
+        8,
+        activeMode === 'ask' ? synthesisOptions : undefined,
+      );
       setResults(response.results);
       setSynthesisAnswer(response.answer || null);
       setIsLiveBackend(response.isLive);
+      setSynthesisMetadata(response.metadata || null);
+      setLastQueryId(response.queryId || null);
     } catch (err) {
       console.error('Query execution error:', err);
     } finally {
       setIsLoading(false);
     }
-  }, [query, mode, filterState]);
+  }, [query, mode, filterState, synthesisOptions]);
 
   // Run default query on mount
   useEffect(() => {
@@ -81,6 +100,19 @@ export function App() {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
+  };
+
+  // User feedback on synthesis
+  const handleFeedback = async (queryId: string, rating: number) => {
+    await submitFeedback(queryId, rating);
+  };
+
+  // Regenerate synthesis with slightly different temperature
+  const handleRegenerate = () => {
+    const jitter = (Math.random() * 0.1) - 0.05; // ±0.05 temperature jitter
+    const newTemp = Math.max(0, Math.min(0.7, synthesisOptions.temperature + jitter));
+    setSynthesisOptions({ ...synthesisOptions, temperature: parseFloat(newTemp.toFixed(2)) });
+    handleExecuteSearch(query, 'ask');
   };
 
   return (
@@ -115,6 +147,8 @@ export function App() {
             onFilterChange={(f) => {
               setFilterState(f);
             }}
+            synthesisOptions={synthesisOptions}
+            onSynthesisOptionsChange={setSynthesisOptions}
           />
         </section>
 
@@ -150,6 +184,10 @@ export function App() {
                   answer={synthesisAnswer}
                   sources={results}
                   onScrollToFolio={handleScrollToFolio}
+                  metadata={synthesisMetadata}
+                  queryId={lastQueryId}
+                  onFeedback={handleFeedback}
+                  onRegenerate={handleRegenerate}
                 />
               )}
             </AnimatePresence>

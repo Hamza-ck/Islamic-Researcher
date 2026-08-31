@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { SearchMode, FolioFilterState, SourceType } from '../types';
+import { SearchMode, FolioFilterState, SourceType, SynthesisOptions, ResponseStyle } from '../types';
 import { PRESET_QUERIES } from '../data/mockCorpus';
-import { Search, Sparkles, Sliders, X, BookOpen, ChevronDown, RefreshCw } from 'lucide-react';
+import { Search, Sparkles, Sliders, X, BookOpen, ChevronDown, RefreshCw, Settings2 } from 'lucide-react';
 
 interface SearchApparatusProps {
   query: string;
@@ -13,6 +13,8 @@ interface SearchApparatusProps {
   onModeChange: (m: SearchMode) => void;
   filterState: FolioFilterState;
   onFilterChange: (f: FolioFilterState) => void;
+  synthesisOptions: SynthesisOptions;
+  onSynthesisOptionsChange: (opts: SynthesisOptions) => void;
 }
 
 export const SearchApparatus: React.FC<SearchApparatusProps> = ({
@@ -24,8 +26,11 @@ export const SearchApparatus: React.FC<SearchApparatusProps> = ({
   onModeChange,
   filterState,
   onFilterChange,
+  synthesisOptions,
+  onSynthesisOptionsChange,
 }) => {
   const [showFilters, setShowFilters] = useState(false);
+  const [showAiOptions, setShowAiOptions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Global hotkey '/' to focus search
@@ -306,6 +311,104 @@ export const SearchApparatus: React.FC<SearchApparatusProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* AI Options Panel (shown only in ask mode) */}
+      {mode === 'ask' && (
+        <div className="space-y-3">
+          <button
+            type="button"
+            onClick={() => setShowAiOptions(!showAiOptions)}
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-medium backdrop-blur-xl transition-all shadow-sm ${
+              showAiOptions
+                ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30'
+                : 'bg-slate-900/80 text-slate-300 border-white/10 hover:border-white/20 hover:text-white'
+            }`}
+          >
+            <Settings2 className="w-3.5 h-3.5 text-indigo-400" />
+            <span>AI Options</span>
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showAiOptions ? 'rotate-180' : ''}`} />
+          </button>
+
+          <AnimatePresence>
+            {showAiOptions && (
+              <motion.div
+                initial={{ opacity: 0, height: 0, y: -10 }}
+                animate={{ opacity: 1, height: 'auto', y: 0 }}
+                exit={{ opacity: 0, height: 0, y: -10 }}
+                transition={{ duration: 0.25, ease: "easeInOut" }}
+                className="overflow-hidden"
+              >
+                <div className="p-5 glass-card rounded-2xl space-y-5 border border-white/10 shadow-2xl">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+
+                    {/* Response Style */}
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 mb-2">
+                        Response Style
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {([
+                          { id: 'concise' as ResponseStyle, label: '⚡ Concise', desc: 'Short & direct' },
+                          { id: 'scholarly' as ResponseStyle, label: '📖 Scholarly', desc: 'Thorough analysis' },
+                          { id: 'detailed' as ResponseStyle, label: '📚 Detailed', desc: 'Exhaustive treatment' },
+                        ] as const).map((style) => {
+                          const active = synthesisOptions.responseStyle === style.id;
+                          return (
+                            <button
+                              key={style.id}
+                              type="button"
+                              onClick={() => onSynthesisOptionsChange({ ...synthesisOptions, responseStyle: style.id })}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
+                                active
+                                  ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-300 font-semibold shadow-sm'
+                                  : 'bg-slate-800/60 border-white/10 text-slate-400 hover:text-slate-200'
+                              }`}
+                              title={style.desc}
+                            >
+                              {style.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-1.5">
+                        {synthesisOptions.responseStyle === 'concise'
+                          ? 'Short, direct answer with essential citations only.'
+                          : synthesisOptions.responseStyle === 'detailed'
+                            ? 'Exhaustive treatment with tafsir context and Arabic text.'
+                            : 'Thorough scholarly analysis with all citations and cross-references.'}
+                      </p>
+                    </div>
+
+                    {/* Temperature Slider */}
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 mb-2">
+                        Precision ← → Creative
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="70"
+                        value={Math.round(synthesisOptions.temperature * 100)}
+                        onChange={(e) => onSynthesisOptionsChange({
+                          ...synthesisOptions,
+                          temperature: parseInt(e.target.value) / 100,
+                        })}
+                        className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                      />
+                      <div className="flex justify-between text-[10px] text-slate-500 mt-1">
+                        <span>🎯 Precise (0.0)</span>
+                        <span className="text-indigo-400 font-mono">{synthesisOptions.temperature.toFixed(1)}</span>
+                        <span>🎨 Creative (0.7)</span>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
 
       {/* Suggested Topics Carousel */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs text-slate-400 scrollbar-none">

@@ -338,7 +338,8 @@ with tab_ask:
         else:
             with st.spinner("2/2: Synthesizing grounded scholarly answer with Gemini..."):
                 try:
-                    answer = llm_mod.synthesize(ask_query.strip(), passages)
+                    result = llm_mod.synthesize(ask_query.strip(), passages)
+                    answer = result.answer
                     
                     st.markdown("### 📜 Grounded Synthesis")
                     st.markdown(f"""

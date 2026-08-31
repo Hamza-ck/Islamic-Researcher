@@ -15,6 +15,7 @@ venv/
 # Large Data & Scraping Cache
 data_pipeline/raw/
 data_pipeline/corpus.jsonl
+backend/logs/
 *.jsonl
 
 # Node & Frontend
