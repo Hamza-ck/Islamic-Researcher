@@ -1,0 +1,11 @@
+fastapi>=0.110
+uvicorn[standard]>=0.29
+gradio>=5.0.0
+spaces
+qdrant-client>=1.9
+sentence-transformers>=3.0
+google-generativeai>=0.7
+python-dotenv>=1.0
+pydantic>=2.0
+torch
+
