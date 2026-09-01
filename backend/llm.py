@@ -23,8 +23,8 @@ from google.genai import types
 
 load_dotenv()
 
-# ── Client & Model Setup ────────────────────────────────────────────────────
-_client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+_api_key = os.environ.get("GEMINI_API_KEY", "")
+_client = genai.Client(api_key=_api_key) if _api_key else None
 _MODEL_NAME = os.environ.get("GEMINI_MODEL", "gemini-3.6-flash")
 
 
@@ -227,9 +227,16 @@ def synthesize(
     tokens_used = 0
     last_error = None
 
+    client = _client
+    if client is None:
+        key = os.environ.get("GEMINI_API_KEY", "")
+        if not key:
+            raise RuntimeError("GEMINI_API_KEY environment variable is not set.")
+        client = genai.Client(api_key=key)
+
     for attempt in range(3):
         try:
-            response = _client.models.generate_content(
+            response = client.models.generate_content(
                 model=_MODEL_NAME,
                 contents=user_prompt,
                 config=gen_config,

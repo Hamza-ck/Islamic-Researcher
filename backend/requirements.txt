@@ -1,6 +1,6 @@
 fastapi>=0.110
 uvicorn[standard]>=0.29
-gradio>=5.0.0
+gradio>=5.35.0
 spaces
 qdrant-client>=1.9
 sentence-transformers>=3.0
@@ -8,4 +8,3 @@ google-genai>=1.0
 python-dotenv>=1.0
 pydantic>=2.0
 torch
-
