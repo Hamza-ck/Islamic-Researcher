@@ -2,7 +2,7 @@ import { RawSearchResult, SearchMode, FolioFilterState, SynthesisOptions, Synthe
 import { MOCK_CORPUS, SYNTHESIS_PRESETS } from '../data/mockCorpus';
 
 const STORAGE_KEY_BASE_URL = 'folio_backend_url';
-const DEFAULT_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const DEFAULT_URL = import.meta.env.VITE_API_BASE_URL || 'https://thinkmeem-islamic-research-engine.hf.space';
 
 export function getStoredBackendUrl(): string {
   if (typeof window === 'undefined') return DEFAULT_URL;
