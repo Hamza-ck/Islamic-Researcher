@@ -6,7 +6,20 @@ const DEFAULT_URL = import.meta.env.VITE_API_BASE_URL || 'https://thinkmeem-isla
 
 export function getStoredBackendUrl(): string {
   if (typeof window === 'undefined') return DEFAULT_URL;
-  return localStorage.getItem(STORAGE_KEY_BASE_URL) || DEFAULT_URL;
+  const stored = localStorage.getItem(STORAGE_KEY_BASE_URL);
+  if (!stored) return DEFAULT_URL;
+
+  // If stored URL points to localhost but client is browsing a remote/Netlify deployment,
+  // automatically default to the live Space URL
+  if (
+    (stored.includes('localhost') || stored.includes('127.0.0.1')) &&
+    typeof window !== 'undefined' &&
+    window.location.hostname !== 'localhost' &&
+    window.location.hostname !== '127.0.0.1'
+  ) {
+    return DEFAULT_URL;
+  }
+  return stored;
 }
 
 export function setStoredBackendUrl(url: string): void {
@@ -17,7 +30,7 @@ export function setStoredBackendUrl(url: string): void {
 export async function checkBackendHealth(url: string): Promise<boolean> {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2500);
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
     const res = await fetch(`${url}/health`, {
       signal: controller.signal,
       headers: { 'Accept': 'application/json' }
@@ -114,11 +127,12 @@ export async function executeFolioQuery(
 ): Promise<QueryExecutionResult> {
   const baseUrl = getStoredBackendUrl();
   const trimmed = query.trim();
+  const timeoutMs = mode === 'ask' ? 60000 : 35000;
 
   // Try live backend first
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     if (mode === 'search') {
       const payload: any = {
@@ -178,6 +192,38 @@ export async function executeFolioQuery(
       }
     }
   } catch (err) {
+    // If custom/stored baseUrl failed and is not DEFAULT_URL, retry once with DEFAULT_URL
+    if (baseUrl !== DEFAULT_URL) {
+      try {
+        const retryController = new AbortController();
+        const retryTimeoutId = setTimeout(() => retryController.abort(), timeoutMs);
+        const endpoint = mode === 'search' ? '/search' : '/ask';
+        const payload: any = mode === 'search'
+          ? { query: trimmed, top_k: topK }
+          : { query: trimmed, top_k: Math.min(topK, 6) };
+
+        const retryRes = await fetch(`${DEFAULT_URL}${endpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: retryController.signal,
+        });
+        clearTimeout(retryTimeoutId);
+
+        if (retryRes.ok) {
+          const data = await retryRes.json();
+          return {
+            isLive: true,
+            results: mode === 'search' ? data.results || [] : data.sources || [],
+            answer: mode === 'ask' ? data.answer : undefined,
+            metadata: mode === 'ask' ? data.metadata || null : undefined,
+            queryId: mode === 'ask' ? data.query_id || null : undefined,
+          };
+        }
+      } catch (retryErr) {
+        console.warn('Fallback to live default URL also failed:', retryErr);
+      }
+    }
     // Backend offline or failed; continue to offline/mock mode seamlessly
     console.info('Backend unreachable, using embedded critical folio corpus fallback:', err);
   }
