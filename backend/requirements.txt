@@ -1,6 +1,6 @@
 fastapi>=0.110
 uvicorn[standard]>=0.29
-gradio>=5.35.0
+gradio>=6.0.0
 spaces
 qdrant-client>=1.9
 sentence-transformers>=3.0
