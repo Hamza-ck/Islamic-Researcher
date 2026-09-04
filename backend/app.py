@@ -45,13 +45,25 @@ def search_endpoint(req: SearchRequest):
 
 @app.post("/ask", response_model=AskResponse)
 def ask_endpoint(req: AskRequest):
-    passages = search_module.search(req.query, top_k=req.top_k)
+    passages = search_module.search(
+        req.query,
+        top_k=req.top_k,
+        types=req.types,
+        collections=req.collections,
+        min_grade=req.min_grade,
+    )
     if not passages:
         return {"answer": "No relevant passages were found in the corpus.", "sources": []}
 
     try:
         import llm
-        result = llm.synthesize(req.query, passages)
+        result = llm.synthesize(
+            req.query,
+            passages,
+            response_style=req.response_style,
+            detail_level=req.detail_level,
+            temperature=req.temperature,
+        )
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"LLM synthesis failed: {e}")
 

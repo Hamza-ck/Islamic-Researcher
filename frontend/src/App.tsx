@@ -139,7 +139,7 @@ export function App() {
           <SearchApparatus
             query={query}
             onQueryChange={setQuery}
-            onSearch={() => handleExecuteSearch()}
+            onSearch={(customQ) => handleExecuteSearch(customQ)}
             isLoading={isLoading}
             mode={mode}
             onModeChange={handleModeChange}

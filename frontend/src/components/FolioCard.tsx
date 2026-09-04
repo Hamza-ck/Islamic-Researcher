@@ -217,14 +217,14 @@ export const FolioCard: React.FC<FolioCardProps> = ({
                 {meta.edition && (
                   <span>Translation: <strong className="text-slate-300 font-medium">{meta.edition}</strong></span>
                 )}
-                {meta.collection_name && (
-                  <span>Collection: <strong className="text-slate-300 font-medium">{meta.collection_name}</strong></span>
+                {(meta.collection_title || meta.collection_name) && (
+                  <span>Collection: <strong className="text-slate-300 font-medium">{meta.collection_title || meta.collection_name}</strong></span>
                 )}
-                {meta.book_number && (
-                  <span>Book: {meta.book_number}</span>
+                {(meta.book ?? meta.book_number) !== undefined && (
+                  <span>Book: {meta.book ?? meta.book_number}</span>
                 )}
-                {meta.hadith_number && (
-                  <span>Hadith: {meta.hadith_number}</span>
+                {(meta.hadithnumber ?? meta.hadith_number) !== undefined && (
+                  <span>Hadith: {meta.hadithnumber ?? meta.hadith_number}</span>
                 )}
               </div>
 

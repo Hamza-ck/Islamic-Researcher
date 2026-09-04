@@ -47,7 +47,13 @@ def search_endpoint(req: SearchRequest):
 
 @app.post("/ask", response_model=AskResponse)
 def ask_endpoint(req: AskRequest):
-    passages = search_module.search(req.query, top_k=req.top_k)
+    passages = search_module.search(
+        req.query,
+        top_k=req.top_k,
+        types=req.types,
+        collections=req.collections,
+        min_grade=req.min_grade,
+    )
     if not passages:
         return {
             "answer": "No relevant passages were found in the corpus.",

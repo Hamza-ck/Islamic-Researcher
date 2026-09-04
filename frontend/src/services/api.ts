@@ -3,34 +3,51 @@ import { MOCK_CORPUS, SYNTHESIS_PRESETS } from '../data/mockCorpus';
 
 const STORAGE_KEY_BASE_URL = 'folio_backend_url';
 const DEFAULT_URL = import.meta.env.VITE_API_BASE_URL || 'https://thinkmeem-islamic-research-engine.hf.space';
+const LOCAL_BACKEND_URL = 'http://127.0.0.1:8000';
+
+// In-memory response cache with TTL (5 minutes) for instant repeat searches
+interface CachedQuery {
+  timestamp: number;
+  data: QueryExecutionResult;
+}
+const CLIENT_QUERY_CACHE = new Map<string, CachedQuery>();
+const CLIENT_CACHE_TTL = 300_000; // 5 minutes
 
 export function getStoredBackendUrl(): string {
   if (typeof window === 'undefined') return DEFAULT_URL;
   const stored = localStorage.getItem(STORAGE_KEY_BASE_URL);
-  if (!stored) return DEFAULT_URL;
 
-  // If stored URL points to localhost but client is browsing a remote/Netlify deployment,
-  // automatically default to the live Space URL
-  if (
-    (stored.includes('localhost') || stored.includes('127.0.0.1')) &&
-    typeof window !== 'undefined' &&
-    window.location.hostname !== 'localhost' &&
-    window.location.hostname !== '127.0.0.1'
-  ) {
-    return DEFAULT_URL;
+  const isLocalHost =
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1';
+
+  if (stored) {
+    // If stored URL points to localhost but client is browsing a remote/Netlify deployment,
+    // automatically default to the live Space URL
+    if ((stored.includes('localhost') || stored.includes('127.0.0.1')) && !isLocalHost) {
+      return DEFAULT_URL;
+    }
+    return stored;
   }
-  return stored;
+
+  // If running locally without an explicit stored override, connect to local FastAPI backend
+  if (isLocalHost) {
+    return LOCAL_BACKEND_URL;
+  }
+
+  return DEFAULT_URL;
 }
 
 export function setStoredBackendUrl(url: string): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem(STORAGE_KEY_BASE_URL, url.trim().replace(/\/$/, ''));
+  CLIENT_QUERY_CACHE.clear(); // Clear cache when switching backends
 }
 
 export async function checkBackendHealth(url: string): Promise<boolean> {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
     const res = await fetch(`${url}/health`, {
       signal: controller.signal,
       headers: { 'Accept': 'application/json' }
@@ -127,22 +144,42 @@ export async function executeFolioQuery(
 ): Promise<QueryExecutionResult> {
   const baseUrl = getStoredBackendUrl();
   const trimmed = query.trim();
-  const timeoutMs = mode === 'ask' ? 60000 : 35000;
+  const timeoutMs = mode === 'ask' ? 35000 : 15000;
 
-  // Try live backend first
+  // Cache key encompasses mode, query, filters, and synthesis options
+  const cacheKey = `${mode}|${baseUrl}|${trimmed.toLowerCase()}|${topK}|${filterState.types.join(',')}|${filterState.collections.join(',')}|${filterState.minGrade || ''}|${JSON.stringify(synthesisOptions || {})}`;
+  const now = Date.now();
+
+  const cached = CLIENT_QUERY_CACHE.get(cacheKey);
+  if (cached && (now - cached.timestamp < CLIENT_CACHE_TTL)) {
+    return cached.data;
+  }
+
+  // Construct payload with complete search filters
+  const buildPayload = (isAsk: boolean) => {
+    const payload: any = {
+      query: trimmed,
+      top_k: isAsk ? Math.min(topK, 6) : topK,
+    };
+    if (filterState.types.length > 0) payload.types = filterState.types;
+    if (filterState.collections.length > 0) payload.collections = filterState.collections;
+    if (filterState.minGrade) payload.min_grade = filterState.minGrade;
+
+    if (isAsk && synthesisOptions) {
+      payload.response_style = synthesisOptions.responseStyle;
+      payload.detail_level = synthesisOptions.detailLevel;
+      payload.temperature = synthesisOptions.temperature;
+    }
+    return payload;
+  };
+
+  // Try active backend first
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     if (mode === 'search') {
-      const payload: any = {
-        query: trimmed,
-        top_k: topK,
-      };
-      if (filterState.types.length > 0) payload.types = filterState.types;
-      if (filterState.collections.length > 0) payload.collections = filterState.collections;
-      if (filterState.minGrade) payload.min_grade = filterState.minGrade;
-
+      const payload = buildPayload(false);
       const res = await fetch(`${baseUrl}/search`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -153,25 +190,16 @@ export async function executeFolioQuery(
 
       if (res.ok) {
         const data: SearchResponse = await res.json();
-        return {
+        const executionResult: QueryExecutionResult = {
           isLive: true,
           results: data.results || [],
         };
+        CLIENT_QUERY_CACHE.set(cacheKey, { timestamp: now, data: executionResult });
+        return executionResult;
       }
     } else {
       // mode === 'ask'
-      const payload: any = {
-        query: trimmed,
-        top_k: Math.min(topK, 6),
-      };
-
-      // Pass synthesis options if provided
-      if (synthesisOptions) {
-        payload.response_style = synthesisOptions.responseStyle;
-        payload.detail_level = synthesisOptions.detailLevel;
-        payload.temperature = synthesisOptions.temperature;
-      }
-
+      const payload = buildPayload(true);
       const res = await fetch(`${baseUrl}/ask`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -182,25 +210,25 @@ export async function executeFolioQuery(
 
       if (res.ok) {
         const data: AskResponse = await res.json();
-        return {
+        const executionResult: QueryExecutionResult = {
           isLive: true,
           results: data.sources || [],
           answer: data.answer,
           metadata: data.metadata || null,
           queryId: data.query_id || null,
         };
+        CLIENT_QUERY_CACHE.set(cacheKey, { timestamp: now, data: executionResult });
+        return executionResult;
       }
     }
   } catch (err) {
-    // If custom/stored baseUrl failed and is not DEFAULT_URL, retry once with DEFAULT_URL
+    // If local/custom baseUrl failed and is not DEFAULT_URL, fallback to DEFAULT_URL
     if (baseUrl !== DEFAULT_URL) {
       try {
         const retryController = new AbortController();
         const retryTimeoutId = setTimeout(() => retryController.abort(), timeoutMs);
         const endpoint = mode === 'search' ? '/search' : '/ask';
-        const payload: any = mode === 'search'
-          ? { query: trimmed, top_k: topK }
-          : { query: trimmed, top_k: Math.min(topK, 6) };
+        const payload = buildPayload(mode === 'ask');
 
         const retryRes = await fetch(`${DEFAULT_URL}${endpoint}`, {
           method: 'POST',
@@ -212,13 +240,15 @@ export async function executeFolioQuery(
 
         if (retryRes.ok) {
           const data = await retryRes.json();
-          return {
+          const executionResult: QueryExecutionResult = {
             isLive: true,
             results: mode === 'search' ? data.results || [] : data.sources || [],
             answer: mode === 'ask' ? data.answer : undefined,
             metadata: mode === 'ask' ? data.metadata || null : undefined,
             queryId: mode === 'ask' ? data.query_id || null : undefined,
           };
+          CLIENT_QUERY_CACHE.set(cacheKey, { timestamp: now, data: executionResult });
+          return executionResult;
         }
       } catch (retryErr) {
         console.warn('Fallback to live default URL also failed:', retryErr);

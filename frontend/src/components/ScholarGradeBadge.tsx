@@ -98,7 +98,7 @@ export const ScholarGradeBadge: React.FC<ScholarGradeBadgeProps> = ({
             <div className="space-y-1.5">
               {grades.map((g, idx) => (
                 <div key={idx} className="flex justify-between items-start gap-2 bg-slate-800/60 p-2 rounded-xl border border-white/[0.06]">
-                  <span className="text-slate-300 font-medium">{g.scholar}:</span>
+                  <span className="text-slate-300 font-medium">{g.scholar || g.name || 'Scholar'}:</span>
                   <span className="font-semibold text-emerald-300">{g.grade}</span>
                 </div>
               ))}

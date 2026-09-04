@@ -7,7 +7,7 @@ import { Search, Sparkles, Sliders, X, BookOpen, ChevronDown, RefreshCw, Setting
 interface SearchApparatusProps {
   query: string;
   onQueryChange: (q: string) => void;
-  onSearch: () => void;
+  onSearch: (customQuery?: string) => void;
   isLoading: boolean;
   mode: SearchMode;
   onModeChange: (m: SearchMode) => void;
@@ -421,7 +421,10 @@ export const SearchApparatus: React.FC<SearchApparatusProps> = ({
             whileTap={{ scale: 0.97 }}
             key={idx}
             type="button"
-            onClick={() => onQueryChange(preset.query)}
+            onClick={() => {
+              onQueryChange(preset.query);
+              onSearch(preset.query);
+            }}
             className="shrink-0 px-3 py-1 rounded-full bg-slate-900/60 hover:bg-slate-800/80 border border-white/10 hover:border-emerald-500/30 text-slate-300 hover:text-white transition-all text-xs"
             title={preset.description}
           >

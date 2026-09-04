@@ -27,6 +27,9 @@ class SearchResponse(BaseModel):
 class AskRequest(BaseModel):
     query: str
     top_k: int = 6
+    types: Optional[list[str]] = None          # e.g. ["quran", "hadith", "tafsir"]
+    collections: Optional[list[str]] = None     # e.g. ["bukhari", "muslim"]
+    min_grade: Optional[str] = None             # "sahih" | "hasan" | "weak" | None
     response_style: str = Field(
         default="scholarly",
         description="Controls answer style: 'concise', 'scholarly', or 'detailed'"

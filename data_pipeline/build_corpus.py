@@ -41,10 +41,16 @@ def main():
         print(f"Loading {name} from {path}...")
         records = load_jsonl(path)
         for rec in records:
-            pieces = chunk_text(rec["text"], MAX_CHUNK_CHARS, CHUNK_OVERLAP_CHARS)
+            raw_text = rec.get("text", "")
+            if not raw_text or not raw_text.strip():
+                continue
+            pieces = chunk_text(raw_text, MAX_CHUNK_CHARS, CHUNK_OVERLAP_CHARS)
             for i, piece in enumerate(pieces):
+                clean_piece = piece.strip()
+                if not clean_piece:
+                    continue
                 chunk_rec = dict(rec)
-                chunk_rec["text"] = piece
+                chunk_rec["text"] = clean_piece
                 if len(pieces) > 1:
                     chunk_rec["id"] = f"{rec['id']}:chunk{i}"
                 out_records.append(chunk_rec)

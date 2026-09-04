@@ -389,10 +389,12 @@ with tab_diagnostics:
         
         if st.button("Test Gemini Heartbeat"):
             try:
-                import google.generativeai as genai
-                genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-                m = genai.GenerativeModel(gemini_model)
-                res = m.generate_content("Ping test: reply with 'OK'")
+                from google import genai
+                client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+                res = client.models.generate_content(
+                    model=gemini_model,
+                    contents="Ping test: reply with 'OK'",
+                )
                 st.success(f"Gemini response: {res.text.strip()}")
             except Exception as e:
                 st.error(f"Gemini test failed: {e}")

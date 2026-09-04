@@ -7,7 +7,8 @@ export type ResponseStyle = 'concise' | 'scholarly' | 'detailed';
 export type DetailLevel = 'brief' | 'standard' | 'comprehensive';
 
 export interface ScholarGrade {
-  scholar: string;
+  scholar?: string;
+  name?: string;
   grade: string;
 }
 
@@ -25,7 +26,10 @@ export interface RawSearchResult {
     edition?: string;
     collection?: string;
     collection_name?: string;
+    collection_title?: string;
+    book?: number | string;
     book_number?: number | string;
+    hadithnumber?: number | string;
     hadith_number?: number | string;
     chapter?: string;
     grades?: ScholarGrade[];

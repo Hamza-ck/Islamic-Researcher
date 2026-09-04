@@ -53,8 +53,11 @@ def main():
         )
         print(f"Created Qdrant collection '{COLLECTION_NAME}' (dim={dim})")
 
+    valid_records = [r for r in records if r.get("text", "").strip()]
+    print(f"Valid non-empty records to embed: {len(valid_records)} (skipped {len(records) - len(valid_records)})")
+
     uploaded = 0
-    for batch in batched(records, BATCH_SIZE):
+    for batch in batched(valid_records, BATCH_SIZE):
         # e5 models expect a "passage: " prefix on indexed text for best results
         texts = [f"passage: {r['text']}" for r in batch]
         vectors = model.encode(texts, normalize_embeddings=True, show_progress_bar=False)
