@@ -26,7 +26,12 @@ import {
 const STORAGE_KEY = 'islamic_research_gemini_history';
 
 export function App() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 1024;
+    }
+    return true;
+  });
   const [activeView, setActiveView] = useState<AppView>('chat');
 
   // Input & Search States
@@ -61,6 +66,17 @@ export function App() {
   const [arabicFontSize, setArabicFontSize] = useState<'normal' | 'large' | 'huge'>('normal');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [exportFolio, setExportFolio] = useState<RawSearchResult | null>(null);
+
+  // Responsive resize handler
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        setIsSidebarOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Save history to localStorage
   useEffect(() => {

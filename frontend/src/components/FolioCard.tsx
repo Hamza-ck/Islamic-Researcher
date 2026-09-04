@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { RawSearchResult } from '../types';
 import { ScholarGradeBadge } from './ScholarGradeBadge';
 import { CitationExportModal } from './CitationExportModal';
-import { Copy, Check, Quote, BookOpen, Scroll, Bookmark } from 'lucide-react';
+import { Copy, Check, Quote, BookOpen, Scroll, Bookmark, Mic } from 'lucide-react';
 
 interface FolioCardProps {
   folio: RawSearchResult;
@@ -54,6 +54,14 @@ export const FolioCard: React.FC<FolioCardProps> = ({
 
   // Type badge styling
   const getTypeBadge = () => {
+    if (folio.type === 'lecture_transcript') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20">
+          <Mic className="w-3.5 h-3.5" />
+          <span>Lecture Discourse</span>
+        </span>
+      );
+    }
     if (isQuran) {
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">

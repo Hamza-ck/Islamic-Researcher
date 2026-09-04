@@ -82,10 +82,10 @@ export const GeminiInputDeck: React.FC<GeminiInputDeckProps> = ({
     (filterState.minGrade ? 1 : 0);
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 relative">
+    <div className="w-full max-w-4xl mx-auto px-3 sm:px-6 relative">
       {/* Expanded Filter Drawer Modal / Popover */}
       {showFilters && (
-        <div className="mb-3 p-4 rounded-2xl bg-[#1e1f20] border border-white/10 shadow-2xl space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-200">
+        <div className="mb-3 p-4 rounded-2xl bg-[#1e1f20] border border-white/10 shadow-2xl space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-200 max-h-[65vh] overflow-y-auto">
           <div className="flex items-center justify-between border-b border-white/[0.06] pb-2.5">
             <span className="text-xs font-semibold text-slate-200 uppercase tracking-wider flex items-center gap-2">
               <SlidersHorizontal className="w-3.5 h-3.5 text-blue-400" />
@@ -180,7 +180,7 @@ export const GeminiInputDeck: React.FC<GeminiInputDeckProps> = ({
                 ? "Ask anything across Quran, Hadith, Tafsir, or Scholar Lectures (Dr. Israr Ahmed, Sayyid Qutb)..."
                 : "Search verified scripture passages, hadiths by chapter, or commentary..."
             }
-            className="flex-1 bg-transparent border-none outline-none resize-none text-sm sm:text-base text-slate-100 placeholder-slate-500 max-h-44 py-1 leading-relaxed"
+            className="flex-1 bg-transparent border-none outline-none resize-none text-base text-slate-100 placeholder-slate-500 max-h-44 py-1 leading-relaxed"
           />
 
           {/* Send Button */}

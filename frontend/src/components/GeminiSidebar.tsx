@@ -40,20 +40,28 @@ export const GeminiSidebar: React.FC<GeminiSidebarProps> = ({
   isLiveBackend,
   onOpenSettings,
 }) => {
+  const closeOnMobile = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      onToggle();
+    }
+  };
+
   return (
     <>
       {/* Mobile Backdrop */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/60 z-30 lg:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-black/70 z-40 lg:hidden backdrop-blur-sm transition-opacity"
           onClick={onToggle}
         />
       )}
 
       {/* Sidebar Container */}
       <aside 
-        className={`fixed top-0 left-0 bottom-0 z-40 bg-[#1e1f20] border-r border-white/[0.08] transition-all duration-300 flex flex-col ${
-          isOpen ? 'w-72' : 'w-18'
+        className={`fixed top-0 left-0 bottom-0 z-50 lg:z-30 bg-[#1e1f20] border-r border-white/[0.08] transition-all duration-300 flex flex-col ${
+          isOpen 
+            ? 'translate-x-0 w-72 sm:w-80 shadow-2xl lg:shadow-none' 
+            : '-translate-x-full lg:translate-x-0 lg:w-18'
         }`}
       >
         {/* Top Header & Collapse Toggle */}
@@ -92,7 +100,10 @@ export const GeminiSidebar: React.FC<GeminiSidebarProps> = ({
         {/* New Research Action Button */}
         <div className="p-3">
           <button
-            onClick={onNewResearch}
+            onClick={() => {
+              onNewResearch();
+              closeOnMobile();
+            }}
             className={`w-full flex items-center gap-3 py-3 px-3.5 rounded-full bg-[#282a2c] hover:bg-[#333538] border border-white/10 hover:border-blue-500/40 text-sm font-medium text-slate-200 hover:text-white transition-all shadow-sm ${
               isOpen ? 'justify-start' : 'justify-center px-0'
             }`}
@@ -106,7 +117,10 @@ export const GeminiSidebar: React.FC<GeminiSidebarProps> = ({
         {/* Navigation Tabs */}
         <div className="px-3 py-2 space-y-1">
           <button
-            onClick={() => onViewChange('chat')}
+            onClick={() => {
+              onViewChange('chat');
+              closeOnMobile();
+            }}
             className={`w-full flex items-center gap-3 py-2.5 px-3 rounded-xl text-sm font-medium transition-colors ${
               activeView === 'chat'
                 ? 'bg-blue-500/15 text-blue-400 border border-blue-500/25'
@@ -119,7 +133,10 @@ export const GeminiSidebar: React.FC<GeminiSidebarProps> = ({
           </button>
 
           <button
-            onClick={() => onViewChange('library')}
+            onClick={() => {
+              onViewChange('library');
+              closeOnMobile();
+            }}
             className={`w-full flex items-center gap-3 py-2.5 px-3 rounded-xl text-sm font-medium transition-colors ${
               activeView === 'library'
                 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
@@ -132,7 +149,10 @@ export const GeminiSidebar: React.FC<GeminiSidebarProps> = ({
           </button>
 
           <button
-            onClick={() => onViewChange('scholars')}
+            onClick={() => {
+              onViewChange('scholars');
+              closeOnMobile();
+            }}
             className={`w-full flex items-center gap-3 py-2.5 px-3 rounded-xl text-sm font-medium transition-colors ${
               activeView === 'scholars'
                 ? 'bg-purple-500/15 text-purple-400 border border-purple-500/25'
@@ -166,7 +186,10 @@ export const GeminiSidebar: React.FC<GeminiSidebarProps> = ({
                       ? 'bg-white/[0.08] text-white font-medium'
                       : 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-200'
                   }`}
-                  onClick={() => onSelectSession(session.id)}
+                  onClick={() => {
+                    onSelectSession(session.id);
+                    closeOnMobile();
+                  }}
                 >
                   <span className="truncate pr-5">{session.title}</span>
                   <button
@@ -212,7 +235,10 @@ export const GeminiSidebar: React.FC<GeminiSidebarProps> = ({
 
           {/* Settings Button */}
           <button
-            onClick={onOpenSettings}
+            onClick={() => {
+              onOpenSettings();
+              closeOnMobile();
+            }}
             className={`w-full flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-xs text-slate-400 hover:text-white hover:bg-white/[0.05] transition-colors ${
               !isOpen && 'justify-center px-0'
             }`}

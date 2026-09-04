@@ -68,28 +68,28 @@ export const LibraryExplorer: React.FC<LibraryExplorerProps> = ({
         </div>
 
         {/* Tab Toggle */}
-        <div className="inline-flex rounded-2xl bg-[#1e1f20] p-1.5 border border-white/[0.08] shrink-0">
+        <div className="w-full md:w-auto grid grid-cols-2 md:inline-flex rounded-2xl bg-[#1e1f20] p-1.5 border border-white/[0.08] shrink-0 gap-1 md:gap-0">
           <button
             onClick={() => setActiveTab('hadith')}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+            className={`inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
               activeTab === 'hadith'
                 ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            <BookOpen className="w-4 h-4" />
-            <span>Hadith Collections (Section-Wise)</span>
+            <BookOpen className="w-4 h-4 shrink-0" />
+            <span className="truncate">Hadith Library</span>
           </button>
           <button
             onClick={() => setActiveTab('scholars')}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+            className={`inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
               activeTab === 'scholars'
                 ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            <Mic className="w-4 h-4" />
-            <span>Scholar Lectures & Transcripts</span>
+            <Mic className="w-4 h-4 shrink-0" />
+            <span className="truncate">Scholar Lectures</span>
           </button>
         </div>
       </div>
@@ -100,14 +100,14 @@ export const LibraryExplorer: React.FC<LibraryExplorerProps> = ({
       {activeTab === 'hadith' && (
         <div className="space-y-6">
           {/* Collection Selector Pills */}
-          <div className="flex flex-wrap gap-2.5">
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
             {HADITH_COLLECTIONS.map((col) => (
               <button
                 key={col.id}
                 onClick={() => {
                   setSelectedCollectionId(col.id);
                 }}
-                className={`flex items-center gap-2.5 py-2 px-4 rounded-xl text-xs font-semibold border transition-all ${
+                className={`flex items-center gap-2 py-2 px-3.5 rounded-xl text-xs font-semibold border shrink-0 transition-all ${
                   selectedCollectionId === col.id
                     ? 'bg-blue-500/20 border-blue-500/50 text-blue-300 shadow-sm'
                     : 'bg-[#1e1f20] border-white/[0.08] text-slate-400 hover:text-white hover:bg-[#282a2c]'
@@ -217,7 +217,7 @@ export const LibraryExplorer: React.FC<LibraryExplorerProps> = ({
         <div className="space-y-6">
           {/* Scholar Filter & Search Bar */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1.5 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap w-full sm:w-auto">
               {[
                 { id: 'all', label: 'All Scholars' },
                 { id: 'israr', label: 'Dr. Israr Ahmed' },
@@ -226,7 +226,7 @@ export const LibraryExplorer: React.FC<LibraryExplorerProps> = ({
                 <button
                   key={s.id}
                   onClick={() => setSelectedScholar(s.id)}
-                  className={`py-1.5 px-3.5 rounded-full text-xs font-semibold border transition-all ${
+                  className={`py-1.5 px-3.5 rounded-full text-xs font-semibold border shrink-0 transition-all ${
                     selectedScholar === s.id
                       ? 'bg-purple-500/20 border-purple-500/50 text-purple-300 shadow-sm'
                       : 'bg-[#1e1f20] border-white/[0.08] text-slate-400 hover:text-white'
