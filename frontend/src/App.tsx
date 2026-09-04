@@ -1,42 +1,77 @@
 import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { RawSearchResult, SearchMode, FolioFilterState, SynthesisOptions, SynthesisMetadata } from './types';
+import { 
+  AppView, 
+  SearchMode, 
+  FolioFilterState, 
+  SynthesisOptions, 
+  ChatMessage, 
+  HistorySession, 
+  RawSearchResult 
+} from './types';
 import { executeFolioQuery, checkBackendHealth, getStoredBackendUrl, submitFeedback } from './services/api';
-import { FolioHeader } from './components/FolioHeader';
-import { SearchApparatus } from './components/SearchApparatus';
-import { FolioCard } from './components/FolioCard';
-import { ScribeCommentaryPanel } from './components/ScribeCommentaryPanel';
+import { GeminiSidebar } from './components/GeminiSidebar';
+import { GeminiHero } from './components/GeminiHero';
+import { GeminiInputDeck } from './components/GeminiInputDeck';
+import { GeminiMessageItem } from './components/GeminiMessageItem';
+import { LibraryExplorer } from './components/LibraryExplorer';
 import { SettingsModal } from './components/SettingsModal';
-import { BookOpen, RefreshCw, Layers } from 'lucide-react';
+import { CitationExportModal } from './components/CitationExportModal';
+import { 
+  Menu, 
+  Sparkles, 
+  RotateCw, 
+  Type
+} from 'lucide-react';
+
+const STORAGE_KEY = 'islamic_research_gemini_history';
 
 export function App() {
-  const [query, setQuery] = useState('patience during hardship');
-  const [mode, setMode] = useState<SearchMode>('search');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [activeView, setActiveView] = useState<AppView>('chat');
+
+  // Input & Search States
+  const [query, setQuery] = useState('');
+  const [mode, setMode] = useState<SearchMode>('ask');
   const [filterState, setFilterState] = useState<FolioFilterState>({
     types: [],
     collections: [],
     minGrade: null,
   });
-
-  const [isLoading, setIsLoading] = useState(false);
-  const [results, setResults] = useState<RawSearchResult[]>([]);
-  const [synthesisAnswer, setSynthesisAnswer] = useState<string | null>(null);
-  const [isLiveBackend, setIsLiveBackend] = useState<boolean | null>(null);
-  const [hasSearched, setHasSearched] = useState(false);
-  const [highlightedFolioId, setHighlightedFolioId] = useState<string | null>(null);
-  const [arabicFontSize, setArabicFontSize] = useState<'normal' | 'large' | 'huge'>('normal');
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-
-  // Synthesis options & metadata
   const [synthesisOptions, setSynthesisOptions] = useState<SynthesisOptions>({
     responseStyle: 'scholarly',
     detailLevel: 'standard',
     temperature: 0.3,
   });
-  const [synthesisMetadata, setSynthesisMetadata] = useState<SynthesisMetadata | null>(null);
-  const [lastQueryId, setLastQueryId] = useState<string | null>(null);
 
-  // Check backend health on initial load
+  // Conversation & History State
+  const [history, setHistory] = useState<HistorySession[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+
+  // System & Backend States
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLiveBackend, setIsLiveBackend] = useState<boolean | null>(null);
+  const [arabicFontSize, setArabicFontSize] = useState<'normal' | 'large' | 'huge'>('normal');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [exportFolio, setExportFolio] = useState<RawSearchResult | null>(null);
+
+  // Save history to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+    } catch (e) {
+      console.warn('Failed to persist history:', e);
+    }
+  }, [history]);
+
+  // Check backend health
   const verifyBackend = useCallback(async () => {
     const url = getStoredBackendUrl();
     const ok = await checkBackendHealth(url);
@@ -47,18 +82,56 @@ export function App() {
     verifyBackend();
   }, [verifyBackend]);
 
+  // Start a fresh research session
+  const handleNewResearch = () => {
+    setActiveSessionId(null);
+    setMessages([]);
+    setQuery('');
+    setActiveView('chat');
+  };
+
+  // Select a session from history
+  const handleSelectSession = (id: string) => {
+    const session = history.find((s) => s.id === id);
+    if (session) {
+      setActiveSessionId(session.id);
+      setMessages(session.messages);
+      setActiveView('chat');
+    }
+  };
+
+  // Delete a session from history
+  const handleDeleteSession = (id: string) => {
+    setHistory((prev) => prev.filter((s) => s.id !== id));
+    if (activeSessionId === id) {
+      handleNewResearch();
+    }
+  };
+
   // Execute query handler
-  const handleExecuteSearch = useCallback(async (customQuery?: string, customMode?: SearchMode) => {
-    const activeQuery = customQuery ?? query;
+  const handleExecuteResearch = async (customQuery?: string, customMode?: SearchMode) => {
+    const activeQuery = (customQuery ?? query).trim();
     const activeMode = customMode ?? mode;
 
-    if (!activeQuery.trim()) return;
+    if (!activeQuery || isLoading) return;
 
+    // Switch to chat view if triggered from another tab
+    setActiveView('chat');
     setIsLoading(true);
-    setHasSearched(true);
-    setHighlightedFolioId(null);
-    setSynthesisMetadata(null);
-    setLastQueryId(null);
+
+    const userMessageId = `user-${Date.now()}`;
+    const userMsg: ChatMessage = {
+      id: userMessageId,
+      role: 'user',
+      content: activeQuery,
+      mode: activeMode,
+      timestamp: Date.now(),
+    };
+
+    // Update message stream with user turn
+    const updatedMessages = [...messages, userMsg];
+    setMessages(updatedMessages);
+    setQuery('');
 
     try {
       const response = await executeFolioQuery(
@@ -68,37 +141,57 @@ export function App() {
         8,
         activeMode === 'ask' ? synthesisOptions : undefined,
       );
-      setResults(response.results);
-      setSynthesisAnswer(response.answer || null);
+
       setIsLiveBackend(response.isLive);
-      setSynthesisMetadata(response.metadata || null);
-      setLastQueryId(response.queryId || null);
+
+      const assistantMsg: ChatMessage = {
+        id: `assistant-${Date.now()}`,
+        role: 'assistant',
+        content: response.answer || (response.results.length > 0
+          ? `Found ${response.results.length} authentic passages matching your inquiry:`
+          : 'No relevant passages were found in the corpus. Try adjusting your search keywords or removing specific filters.'),
+        mode: activeMode,
+        results: response.results,
+        metadata: response.metadata,
+        queryId: response.queryId,
+        timestamp: Date.now(),
+      };
+
+      const finalMessages = [...updatedMessages, assistantMsg];
+      setMessages(finalMessages);
+
+      // Update or create history session
+      const title = activeQuery.length > 38 ? `${activeQuery.slice(0, 38)}...` : activeQuery;
+      const preview = (response.answer || 'Search results').slice(0, 70);
+
+      if (activeSessionId) {
+        setHistory((prev) =>
+          prev.map((s) => (s.id === activeSessionId ? { ...s, messages: finalMessages, preview } : s))
+        );
+      } else {
+        const newSessionId = `session-${Date.now()}`;
+        setActiveSessionId(newSessionId);
+        const newSession: HistorySession = {
+          id: newSessionId,
+          title,
+          preview,
+          timestamp: Date.now(),
+          messages: finalMessages,
+        };
+        setHistory((prev) => [newSession, ...prev]);
+      }
     } catch (err) {
-      console.error('Query execution error:', err);
+      console.error('Research execution error:', err);
+      const errorMsg: ChatMessage = {
+        id: `error-${Date.now()}`,
+        role: 'assistant',
+        content: 'An unexpected connection error occurred while querying the Islamic knowledge base. Please check your backend endpoint in settings.',
+        mode: activeMode,
+        timestamp: Date.now(),
+      };
+      setMessages([...updatedMessages, errorMsg]);
     } finally {
       setIsLoading(false);
-    }
-  }, [query, mode, filterState, synthesisOptions]);
-
-  // Run default query on mount
-  useEffect(() => {
-    handleExecuteSearch('patience during hardship', 'search');
-  }, []);
-
-  // Mode change handler
-  const handleModeChange = (newMode: SearchMode) => {
-    setMode(newMode);
-    if (query.trim() && hasSearched) {
-      handleExecuteSearch(query, newMode);
-    }
-  };
-
-  // Scroll to cited folio from synthesis commentary
-  const handleScrollToFolio = (id: string) => {
-    setHighlightedFolioId(id);
-    const element = document.getElementById(`folio-${id}`);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   };
 
@@ -107,171 +200,186 @@ export function App() {
     await submitFeedback(queryId, rating);
   };
 
-  // Regenerate synthesis with slightly different temperature
+  // Regenerate last synthesis
   const handleRegenerate = () => {
-    const jitter = (Math.random() * 0.1) - 0.05; // ±0.05 temperature jitter
-    const newTemp = Math.max(0, Math.min(0.7, synthesisOptions.temperature + jitter));
-    setSynthesisOptions({ ...synthesisOptions, temperature: parseFloat(newTemp.toFixed(2)) });
-    handleExecuteSearch(query, 'ask');
+    const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user');
+    if (lastUserMsg) {
+      handleExecuteResearch(lastUserMsg.content, lastUserMsg.mode);
+    }
+  };
+
+  // Font size toggle
+  const cycleFontSize = () => {
+    setArabicFontSize((curr) => (curr === 'normal' ? 'large' : curr === 'large' ? 'huge' : 'normal'));
   };
 
   return (
-    <div className="min-h-screen bg-[#06080e] text-slate-100 flex flex-col relative overflow-x-hidden font-sans">
+    <div className="min-h-screen bg-[#131314] text-[#e3e3e3] flex overflow-x-hidden font-sans antialiased">
+      {/* Ambient Gemini Glow Orbs */}
+      <div className="fixed top-0 left-1/3 w-[30rem] h-[30rem] bg-blue-500/5 rounded-full blur-3xl pointer-events-none -z-10" />
+      <div className="fixed bottom-1/4 right-1/4 w-[32rem] h-[32rem] bg-purple-500/5 rounded-full blur-3xl pointer-events-none -z-10" />
 
-      {/* Ambient Glassmorphic Glow Orbs */}
-      <div className="fixed top-0 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -z-10 animate-pulse" />
-      <div className="fixed bottom-1/4 right-1/4 w-[32rem] h-[32rem] bg-indigo-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
-      <div className="fixed top-1/2 right-10 w-80 h-80 bg-amber-500/5 rounded-full blur-3xl pointer-events-none -z-10" />
-
-      {/* Top Header */}
-      <FolioHeader
+      {/* Gemini Navigation Sidebar */}
+      <GeminiSidebar
+        isOpen={isSidebarOpen}
+        onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+        activeView={activeView}
+        onViewChange={setActiveView}
+        onNewResearch={handleNewResearch}
+        history={history}
+        activeSessionId={activeSessionId}
+        onSelectSession={handleSelectSession}
+        onDeleteSession={handleDeleteSession}
         isLiveBackend={isLiveBackend}
         onOpenSettings={() => setIsSettingsOpen(true)}
-        arabicFontSize={arabicFontSize}
-        onFontSizeChange={setArabicFontSize}
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8">
+      <div
+        className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${
+          isSidebarOpen ? 'lg:pl-72' : 'lg:pl-18'
+        }`}
+      >
+        {/* Top Minimal Gemini Header Bar */}
+        <header className="sticky top-0 z-20 h-14 border-b border-white/[0.06] bg-[#131314]/80 backdrop-blur-xl px-4 sm:px-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {/* Sidebar toggle for mobile or collapsed */}
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+              title="Toggle sidebar"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
 
-        {/* Search Widget */}
-        <section>
-          <SearchApparatus
-            query={query}
-            onQueryChange={setQuery}
-            onSearch={(customQ) => handleExecuteSearch(customQ)}
-            isLoading={isLoading}
-            mode={mode}
-            onModeChange={handleModeChange}
-            filterState={filterState}
-            onFilterChange={(f) => {
-              setFilterState(f);
-            }}
-            synthesisOptions={synthesisOptions}
-            onSynthesisOptionsChange={setSynthesisOptions}
-          />
-        </section>
-
-        {/* Loading Spinner */}
-        {isLoading && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="py-16 text-center space-y-4"
-          >
-            <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto shadow-glow-emerald">
-              <RefreshCw className="w-7 h-7 text-emerald-400 animate-spin" />
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-slate-100">
+                {activeView === 'chat'
+                  ? 'Islamic Research Studio'
+                  : activeView === 'library'
+                  ? 'Canonical Hadith Library'
+                  : 'Scholar Transcripts & Treatises'}
+              </span>
+              <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                <Sparkles className="w-3 h-3 text-blue-400" />
+                <span>Grounded Gemini 2.5</span>
+              </span>
             </div>
-            <div className="space-y-1">
-              <h3 className="text-sm font-bold text-white tracking-wide">
-                Searching Islamic Corpus...
-              </h3>
-              <p className="text-xs text-slate-400">
-                Finding matched Quranic verses, authentic hadiths, and classical commentary
-              </p>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Results Section */}
-        {!isLoading && hasSearched && (
-          <div className="space-y-8">
-
-            {/* AI Synthesized Answer (Shown in 'ask' mode) */}
-            <AnimatePresence>
-              {mode === 'ask' && synthesisAnswer && (
-                <ScribeCommentaryPanel
-                  answer={synthesisAnswer}
-                  sources={results}
-                  onScrollToFolio={handleScrollToFolio}
-                  metadata={synthesisMetadata}
-                  queryId={lastQueryId}
-                  onFeedback={handleFeedback}
-                  onRegenerate={handleRegenerate}
-                />
-              )}
-            </AnimatePresence>
-
-            {/* Results Header Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.08] pb-3.5">
-              <div className="flex items-center gap-2.5">
-                <div className="flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-emerald-400" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                    {mode === 'ask' ? 'Cited Source Passages' : 'Retrieved Passages'}
-                  </span>
-                </div>
-                <span className="px-2.5 py-0.5 rounded-full bg-slate-900 border border-white/10 text-xs font-mono text-emerald-300 font-semibold">
-                  {results.length} Found
-                </span>
-              </div>
-
-              {/* Source breakdown counts */}
-              <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
-                <span>Quran: <strong className="text-slate-200">{results.filter(r => r.type === 'quran').length}</strong></span>
-                <span>•</span>
-                <span>Hadith: <strong className="text-slate-200">{results.filter(r => r.type === 'hadith').length}</strong></span>
-                <span>•</span>
-                <span>Tafsir: <strong className="text-slate-200">{results.filter(r => r.type === 'tafsir').length}</strong></span>
-              </div>
-            </div>
-
-            {/* List of Passages */}
-            {results.length > 0 ? (
-              <motion.div
-                layout
-                className="space-y-5"
-              >
-                {results.map((folio, idx) => (
-                  <FolioCard
-                    key={folio.id || idx}
-                    folio={folio}
-                    index={idx}
-                    arabicFontSize={arabicFontSize}
-                    isHighlighted={highlightedFolioId === folio.id}
-                  />
-                ))}
-              </motion.div>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="p-12 text-center glass-card rounded-3xl border border-white/10 space-y-3"
-              >
-                <BookOpen className="w-10 h-10 text-slate-500 mx-auto" />
-                <h3 className="text-base font-bold text-slate-200">
-                  No Passages Found
-                </h3>
-                <p className="text-xs text-slate-400 max-w-md mx-auto">
-                  Try searching with different keywords or adjusting the source filters above.
-                </p>
-              </motion.div>
-            )}
-
           </div>
-        )}
 
-      </main>
+          <div className="flex items-center gap-2">
+            {/* Arabic Script Size Toggle */}
+            <button
+              onClick={cycleFontSize}
+              className="px-2.5 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-white/[0.06] border border-white/[0.08] flex items-center gap-1 transition-all"
+              title="Change Arabic font size"
+            >
+              <Type className="w-3.5 h-3.5" />
+              <span className="capitalize">{arabicFontSize}</span>
+            </button>
+          </div>
+        </header>
 
-      {/* Footer */}
-      <footer className="w-full border-t border-white/[0.06] bg-[#04060b]/80 backdrop-blur-xl py-6 mt-16 text-center text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-4 space-y-1">
-          <p className="text-slate-300 font-semibold text-xs tracking-wide">
-            Islamic Research Engine • Grounded Scripture & Verified Hadith
-          </p>
-          <p className="text-[11px] text-slate-400">
-            Quran (Arabic & Translations) • Canonical Hadith • Classical Tafsir
-          </p>
+        {/* Dynamic Main Views */}
+        <main className="flex-1 flex flex-col pb-36">
+          {/* VIEW 1: GEMINI RESEARCH STUDIO */}
+          {activeView === 'chat' && (
+            <div className="flex-1 flex flex-col">
+              {messages.length === 0 ? (
+                /* Gemini Welcome Hero */
+                <GeminiHero
+                  onSelectPrompt={(p, m) => {
+                    handleExecuteResearch(p, m);
+                  }}
+                />
+              ) : (
+                /* Conversational Stream */
+                <div className="py-6 space-y-4">
+                  {messages.map((msg) => (
+                    <GeminiMessageItem
+                      key={msg.id}
+                      message={msg}
+                      onRegenerate={msg.role === 'assistant' ? handleRegenerate : undefined}
+                      onFeedback={handleFeedback}
+                      onExportCitation={(results) => {
+                        if (results.length > 0) setExportFolio(results[0]);
+                      }}
+                      arabicFontSize={arabicFontSize}
+                    />
+                  ))}
+
+                  {/* Gemini Thinking / Loading State */}
+                  {isLoading && (
+                    <div className="my-6 max-w-4xl mx-auto px-4 flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-500 via-purple-500 to-amber-400 p-[1.5px] shrink-0 animate-pulse">
+                        <div className="w-full h-full bg-[#1e1f20] rounded-[10px] flex items-center justify-center">
+                          <RotateCw className="w-4 h-4 text-blue-400 animate-spin" />
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-xs font-semibold text-slate-200 block">
+                          Searching Islamic Corpus & Scholar Archives...
+                        </span>
+                        <span className="text-[11px] text-slate-500 block">
+                          Synthesizing verified verses, canonical hadiths, and scholar lecture transcripts
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* VIEW 2 & 3: SECTION-WISE HADITH LIBRARY & SCHOLAR LECTURES */}
+          {(activeView === 'library' || activeView === 'scholars') && (
+            <LibraryExplorer
+              onStartResearch={(prompt, mode) => {
+                setActiveView('chat');
+                handleExecuteResearch(prompt, mode);
+              }}
+              arabicFontSize={arabicFontSize}
+            />
+          )}
+        </main>
+
+        {/* Floating Gemini Input Deck (Docked at Bottom) */}
+        <div className="fixed bottom-0 right-0 left-0 z-30 pb-4 pt-2 bg-gradient-to-t from-[#131314] via-[#131314]/90 to-transparent pointer-events-none">
+          <div
+            className={`transition-all duration-300 pointer-events-auto ${
+              isSidebarOpen ? 'lg:pl-72' : 'lg:pl-18'
+            }`}
+          >
+            <GeminiInputDeck
+              query={query}
+              onQueryChange={setQuery}
+              onSend={() => handleExecuteResearch()}
+              isLoading={isLoading}
+              mode={mode}
+              onModeChange={setMode}
+              filterState={filterState}
+              onFilterChange={setFilterState}
+              synthesisOptions={synthesisOptions}
+              onSynthesisOptionsChange={setSynthesisOptions}
+            />
+          </div>
         </div>
-      </footer>
+      </div>
 
-      {/* Backend Settings Dialog */}
+      {/* Settings Dialog */}
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         onEndpointUpdated={verifyBackend}
       />
 
+      {/* Academic Citation Export Modal */}
+      {exportFolio && (
+        <CitationExportModal
+          folio={exportFolio}
+          onClose={() => setExportFolio(null)}
+        />
+      )}
     </div>
   );
 }

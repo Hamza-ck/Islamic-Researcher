@@ -5,16 +5,23 @@
 @layer base {
   :root {
     color-scheme: dark;
+    --gemini-bg: #131314;
+    --gemini-surface: #1e1f20;
+    --gemini-surface-hover: #282a2c;
+    --gemini-border: rgba(255, 255, 255, 0.08);
+    --gemini-border-active: rgba(66, 133, 244, 0.5);
   }
   
   body {
-    background-color: #06080e;
-    color: #e2e8f0;
+    background-color: #131314;
+    color: #e3e3e3;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     font-feature-settings: "kern", "liga", "clig", "calt";
     text-rendering: optimizeLegibility;
+    overflow-x: hidden;
   }
 
-  /* Sleek Modern Scrollbar */
+  /* Sleek Gemini Scrollbars */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -23,51 +30,92 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.12);
     border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(16, 185, 129, 0.4);
+    background: rgba(66, 133, 244, 0.4);
   }
 }
 
 @layer utilities {
-  /* Glassmorphic Surfaces */
+  /* Gemini Gradient Utilities */
+  .gemini-gradient-text {
+    background: linear-gradient(135deg, #4285f4 0%, #9b72cb 45%, #d96570 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .gemini-gradient-subtle {
+    background: linear-gradient(135deg, rgba(66, 133, 244, 0.15) 0%, rgba(155, 114, 203, 0.12) 50%, rgba(217, 101, 112, 0.08) 100%);
+  }
+
+  .gemini-gradient-border {
+    border-image: linear-gradient(135deg, #4285f4, #9b72cb, #d96570) 1;
+  }
+
+  /* Gemini Floating Pill & Surface Styles */
+  .gemini-surface {
+    background-color: #1e1f20;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .gemini-surface-hover {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .gemini-surface-hover:hover {
+    background-color: #282a2c;
+    border-color: rgba(255, 255, 255, 0.14);
+  }
+
+  .gemini-input-pill {
+    background: rgba(30, 31, 32, 0.85);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.6), 0 0 25px rgba(66, 133, 244, 0.06);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .gemini-input-pill:focus-within {
+    border-color: rgba(66, 133, 244, 0.55);
+    box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.7), 0 0 35px rgba(66, 133, 244, 0.18);
+  }
+
+  /* Glassmorphic Cards (Backwards compatibility) */
   .glass-card {
-    background: rgba(15, 23, 42, 0.65);
+    background: rgba(30, 31, 32, 0.7);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid rgba(255, 255, 255, 0.08);
   }
 
   .glass-card-hover {
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .glass-card-hover:hover {
-    background: rgba(15, 23, 42, 0.85);
-    border-color: rgba(16, 185, 129, 0.3);
-    box-shadow: 0 12px 35px -5px rgba(0, 0, 0, 0.5), 0 0 20px rgba(16, 185, 129, 0.1);
-  }
-
-  .glass-panel {
-    background: rgba(10, 15, 29, 0.75);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-  }
-
-  .glass-input {
-    background: rgba(8, 12, 22, 0.7);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(40, 42, 44, 0.85);
+    border-color: rgba(66, 133, 244, 0.3);
+    box-shadow: 0 12px 35px -5px rgba(0, 0, 0, 0.5), 0 0 20px rgba(66, 133, 244, 0.1);
   }
 
   /* Arabic Script Typography */
   .arabic-text {
-    font-family: 'Amiri', serif;
+    font-family: 'Amiri', serif, 'Traditional Arabic';
     direction: rtl;
-    line-height: 2.1;
+    line-height: 2.2;
     text-align: right;
+  }
+
+  /* Shimmer animation for AI synthesis */
+  @keyframes gemini-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  .animate-gemini-shimmer {
+    background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(66,133,244,0.12) 50%, rgba(255,255,255,0.03) 75%);
+    background-size: 200% 100%;
+    animation: gemini-shimmer 2.2s infinite;
   }
 }

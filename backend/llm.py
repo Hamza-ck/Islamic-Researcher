@@ -119,6 +119,17 @@ def _format_passage(index: int, passage: dict) -> str:
             )
             parts.append(f"Scholar Grades: {scholar_grades}")
 
+    # Scholar / Lecture Discourse info
+    scholar = metadata.get("scholar")
+    if scholar:
+        parts.append(f"Scholar / Speaker: {scholar}")
+    series = metadata.get("series") or metadata.get("work")
+    if series:
+        parts.append(f"Series / Work: {series}")
+    timestamp_anchor = metadata.get("timestamp_anchor")
+    if timestamp_anchor:
+        parts.append(f"Timestamp: @{timestamp_anchor}")
+
     # Arabic text
     arabic = passage.get("arabic")
     if arabic:

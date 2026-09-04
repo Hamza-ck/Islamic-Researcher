@@ -1,10 +1,12 @@
-export type SourceType = 'quran' | 'hadith' | 'tafsir';
+export type SourceType = 'quran' | 'hadith' | 'tafsir' | 'lecture_transcript';
 
 export type GradeCategory = 'sahih' | 'hasan' | 'daif' | 'unclassified';
 
 export type ResponseStyle = 'concise' | 'scholarly' | 'detailed';
 
 export type DetailLevel = 'brief' | 'standard' | 'comprehensive';
+
+export type AppView = 'chat' | 'library' | 'scholars';
 
 export interface ScholarGrade {
   scholar?: string;
@@ -36,6 +38,10 @@ export interface RawSearchResult {
     grade_category?: GradeCategory | string;
     tafsir_name?: string;
     author?: string;
+    scholar?: string;
+    series?: string;
+    timestamp_url?: string;
+    duration?: string;
     [key: string]: any;
   };
 }
@@ -80,3 +86,57 @@ export interface BackendConfig {
   isCustomUrl: boolean;
 }
 
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  mode: SearchMode;
+  results?: RawSearchResult[];
+  metadata?: SynthesisMetadata | null;
+  queryId?: string | null;
+  timestamp: number;
+}
+
+export interface HistorySession {
+  id: string;
+  title: string;
+  preview: string;
+  timestamp: number;
+  messages: ChatMessage[];
+}
+
+export interface LibraryBook {
+  id: string;
+  bookNumber: number | string;
+  nameArabic?: string;
+  nameEnglish: string;
+  hadithCount?: number;
+  description?: string;
+  sampleHadithId?: string;
+}
+
+export interface LibraryCollection {
+  id: string;
+  title: string;
+  arabicTitle: string;
+  scholar: string;
+  totalHadith: number;
+  description: string;
+  books: LibraryBook[];
+}
+
+export interface ScholarLecture {
+  id: string;
+  scholar: string;
+  series: string;
+  title: string;
+  surah?: string | number;
+  ruku?: number;
+  duration?: string;
+  audioUrl?: string;
+  videoUrl?: string;
+  timestampAnchor?: string;
+  transcriptExcerpt: string;
+  arabicText?: string;
+  topics: string[];
+}
