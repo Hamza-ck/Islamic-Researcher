@@ -1,4 +1,5 @@
 requests>=2.31
-qdrant-client>=1.9
-sentence-transformers>=3.0
 python-dotenv>=1.0
+sentence-transformers>=3.0
+faiss-cpu>=1.8
+qdrant-client>=1.9

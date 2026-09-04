@@ -99,7 +99,8 @@ LECTURE_TRANSCRIPTS = [
             "surah": 103,
             "ayah": 1,
             "language": "english_urdu_summary",
-            "source": "Tanzeem-e-Islami Archives"
+            "source": "Tanzeem-e-Islami Archives",
+            "provenance_status": "secondary_summary_verify_before_publication"
         }
     },
     {
@@ -125,7 +126,8 @@ LECTURE_TRANSCRIPTS = [
             "surah": 2,
             "ayah": 30,
             "language": "english_urdu_summary",
-            "source": "Tanzeem-e-Islami Archives"
+            "source": "Tanzeem-e-Islami Archives",
+            "provenance_status": "secondary_summary_verify_before_publication"
         }
     },
     {
@@ -154,7 +156,8 @@ LECTURE_TRANSCRIPTS = [
             "surah": 18,
             "ayah": 1,
             "language": "english_urdu_summary",
-            "source": "Tanzeem-e-Islami Archives"
+            "source": "Tanzeem-e-Islami Archives",
+            "provenance_status": "secondary_summary_verify_before_publication"
         }
     },
     {
@@ -175,7 +178,8 @@ LECTURE_TRANSCRIPTS = [
             "scholar": "Sayyid Qutb",
             "series": "Social Justice in Islam",
             "language": "english",
-            "source": "Islamic Foundation Publications"
+            "source": "Islamic Foundation Publications",
+            "provenance_status": "secondary_summary_verify_before_publication"
         }
     }
 ]

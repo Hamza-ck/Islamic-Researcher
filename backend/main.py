@@ -1,168 +1,68 @@
-"""FastAPI backend for the Islamic research/search tool.
+import sys
+from pathlib import Path
 
-Endpoints:
-    GET  /health
-    POST /search       -> retrieval only, no LLM (fast, zero hallucination risk)
-    POST /ask          -> retrieval + Gemini synthesis with configurable options
-    POST /feedback     -> user feedback on synthesized answers (for training data)
-    GET  /ask/options  -> available synthesis configuration options
-    GET  /logs/stats   -> prompt log statistics
-"""
+WORKSPACE_DIR = Path(__file__).resolve().parents[1]
+if str(WORKSPACE_DIR) not in sys.path:
+    sys.path.insert(0, str(WORKSPACE_DIR))
+BACKEND_DIR = Path(__file__).resolve().parent
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
-
-load_dotenv()
-
-from models import (
-    SearchRequest, SearchResponse,
-    AskRequest, AskResponse, SynthesisMetadata,
-    FeedbackRequest, FeedbackResponse,
-)
-import search as search_module
-
-app = FastAPI(title="Islamic Research Tool API")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # tighten this to your frontend's domain before going live
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+from backend.models import SearchRequest,SearchResponse,AskRequest,AskResponse,SynthesisMetadata,FeedbackRequest,FeedbackResponse
+from backend.search import search
+from backend.research.engine import research
 
 
-@app.get("/health")
+app=FastAPI(title='Islamic Researcher API',version='2.0.0')
+app.add_middleware(CORSMiddleware,allow_origins=['*'],allow_methods=['*'],allow_headers=['*'])
+
+@app.get('/')
+def root(): return {'status':'ok','service':'Islamic Researcher','version':'2.0.0','retrieval':'hybrid lexical+semantic+reranker'}
+
+@app.get('/health')
 def health():
-    return {"status": "ok"}
+    from backend.core.config import CORPUS_PATH,SQLITE_PATH,EMBEDDING_MODEL
+    return {'status':'ok','corpus_available':CORPUS_PATH.exists(),'local_index_available':SQLITE_PATH.exists(),'embedding_model':EMBEDDING_MODEL}
 
+@app.post('/search',response_model=SearchResponse)
+def search_endpoint(req:SearchRequest):
+    if req.research:
+        plan,results=research(req.query,req.top_k,req.types,req.collections,req.min_grade)
+        return {'results':results,'metadata':{'research_plan':plan}}
+    return {'results':search(req.query,req.top_k,req.types,req.collections,req.min_grade),'metadata':{'mode':'hybrid'}}
 
-@app.post("/search", response_model=SearchResponse)
-def search_endpoint(req: SearchRequest):
-    results = search_module.search(
-        req.query, top_k=req.top_k, types=req.types,
-        collections=req.collections, min_grade=req.min_grade,
-    )
-    return {"results": results}
-
-
-@app.post("/ask", response_model=AskResponse)
-def ask_endpoint(req: AskRequest):
-    passages = search_module.search(
-        req.query,
-        top_k=req.top_k,
-        types=req.types,
-        collections=req.collections,
-        min_grade=req.min_grade,
-    )
-    if not passages:
-        return {
-            "answer": "No relevant passages were found in the corpus.",
-            "sources": [],
-            "metadata": None,
-            "query_id": None,
-        }
-
-    try:
-        import llm
-        result = llm.synthesize(
-            req.query,
-            passages,
-            response_style=req.response_style,
-            detail_level=req.detail_level,
-            temperature=req.temperature,
-        )
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=f"LLM synthesis failed: {e}")
-
-    # Log the interaction for training data
-    query_id = None
+@app.post('/ask',response_model=AskResponse)
+def ask_endpoint(req:AskRequest):
+    import time
+    start=time.time()
+    if req.research:
+        plan,passages=research(req.query,req.top_k,req.types,req.collections,req.min_grade)
+    else:
+        plan=None; passages=search(req.query,req.top_k,req.types,req.collections,req.min_grade)
+    from backend.generation.llm import synthesize
+    result=synthesize(req.query,passages,req.response_style,req.detail_level,req.temperature)
+    qid=None
     try:
         import prompt_logger
-        query_id = prompt_logger.log_interaction(
-            query=req.query,
-            passages=passages,
-            answer=result.answer,
-            response_style=req.response_style,
-            detail_level=req.detail_level,
-            temperature=req.temperature,
-            model_used=result.model_used,
-            tokens_used=result.tokens_used,
-            latency_ms=result.latency_ms,
-            confidence=result.confidence,
-            language_detected=result.language_detected,
-        )
-    except Exception:
-        pass  # Logging failure should never block the response
+        qid=prompt_logger.log_interaction(req.query,passages,result.answer,response_style=req.response_style,detail_level=req.detail_level,temperature=req.temperature,model_used=result.model_used,tokens_used=result.tokens_used,latency_ms=result.latency_ms,confidence=result.confidence,language_detected=result.language_detected)
+    except Exception: pass
+    meta=SynthesisMetadata(confidence=result.confidence,confidence_score=result.confidence_score,model_used=result.model_used,tokens_used=result.tokens_used,latency_ms=int((time.time()-start)*1000),response_style=req.response_style,temperature=req.temperature,verification=result.verification,research_plan=plan)
+    return {'answer':result.answer,'sources':passages,'metadata':meta,'query_id':qid}
 
-    metadata = SynthesisMetadata(
-        confidence=result.confidence,
-        model_used=result.model_used,
-        tokens_used=result.tokens_used,
-        latency_ms=result.latency_ms,
-        response_style=req.response_style,
-        temperature=req.temperature,
-    )
-
-    return {
-        "answer": result.answer,
-        "sources": passages,
-        "metadata": metadata,
-        "query_id": query_id,
-    }
-
-
-@app.post("/feedback", response_model=FeedbackResponse)
-def feedback_endpoint(req: FeedbackRequest):
-    """Record user feedback on a synthesized answer."""
+@app.post('/feedback',response_model=FeedbackResponse)
+def feedback(req:FeedbackRequest):
     try:
-        import prompt_logger
-        success = prompt_logger.log_feedback(
-            query_id=req.query_id,
-            rating=req.rating,
-            comment=req.comment,
-        )
-        return {"success": success, "message": "Feedback recorded. Thank you!"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to record feedback: {e}")
+        import prompt_logger; prompt_logger.log_feedback(req.query_id,req.rating,req.comment)
+        return {'success':True,'message':'Feedback recorded'}
+    except Exception as e: raise HTTPException(500,str(e))
 
+@app.get('/ask/options')
+def options(): return {'response_styles':['concise','scholarly','detailed'],'detail_levels':['brief','standard','comprehensive'],'temperature':{'min':0,'max':1,'default':0.2}}
 
-@app.get("/ask/options")
-def ask_options():
-    """Return available synthesis configuration options for the frontend."""
-    return {
-        "response_styles": {
-            "concise": {
-                "label": "Concise",
-                "description": "Short, direct answer in 2-3 paragraphs with essential citations only.",
-                "icon": "⚡",
-            },
-            "scholarly": {
-                "label": "Scholarly",
-                "description": "Thorough analysis with all citations, authenticity grades, and cross-references.",
-                "icon": "📖",
-                "default": True,
-            },
-            "detailed": {
-                "label": "Detailed",
-                "description": "Exhaustive treatment with tafsir context, Arabic text, and thematic organization.",
-                "icon": "📚",
-            },
-        },
-        "detail_levels": ["brief", "standard", "comprehensive"],
-        "temperature": {
-            "min": 0.0,
-            "max": 1.0,
-            "default": 0.3,
-            "description": "Lower = more precise and grounded, Higher = more creative and expansive",
-        },
-    }
-
-
-@app.get("/logs/stats")
-def log_stats():
-    """Return prompt log statistics."""
+@app.get('/logs/stats')
+def logs():
     try:
-        import prompt_logger
-        return prompt_logger.get_log_stats()
-    except Exception as e:
-        return {"error": str(e)}
+        import prompt_logger; return prompt_logger.get_log_stats()
+    except Exception as e: return {'error':str(e)}

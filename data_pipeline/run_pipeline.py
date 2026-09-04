@@ -1,38 +1,11 @@
-"""Run the full data pipeline: fetch sources -> build corpus -> embed & upload.
-
-Usage:
-    python run_pipeline.py              # fetch + build + embed/upload
-    python run_pipeline.py --fetch-only # only fetch + build corpus (no Qdrant needed)
-"""
-import argparse
-import subprocess
-import sys
-
-STEPS = ["fetch_quran.py", "fetch_hadith.py", "fetch_tafsir.py", "build_corpus.py"]
-
+import argparse,subprocess,sys
+from pathlib import Path
 
 def run(script):
-    print(f"\n=== Running {script} ===")
-    result = subprocess.run([sys.executable, script])
-    if result.returncode != 0:
-        print(f"'{script}' failed, stopping.")
-        sys.exit(1)
+    r=subprocess.run([sys.executable,script], cwd=Path(__file__).resolve().parent);
+    if r.returncode: raise SystemExit(r.returncode)
 
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--fetch-only", action="store_true",
-                         help="Only fetch and build the corpus, skip embedding/upload")
-    args = parser.parse_args()
-
-    for step in STEPS:
-        run(step)
-
-    if not args.fetch_only:
-        run("embed_and_upload.py")
-
-    print("\nPipeline complete.")
-
-
-if __name__ == "__main__":
-    main()
+p=argparse.ArgumentParser(); p.add_argument('--fetch-only',action='store_true'); p.add_argument('--local-index',action='store_true'); a=p.parse_args()
+for s in ['fetch_quran.py','fetch_hadith.py','fetch_tafsir.py','fetch_scholars.py']: run(s)
+run('build_corpus.py')
+if a.local_index: run('indexing/build_faiss.py')

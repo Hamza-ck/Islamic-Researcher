@@ -17,6 +17,11 @@ data_pipeline/raw/
 data_pipeline/corpus.jsonl
 backend/logs/
 *.jsonl
+*.faiss
+*.faiss.*
+*.sqlite3
+*.sqlite
+*.db
 
 # Node & Frontend
 node_modules/
