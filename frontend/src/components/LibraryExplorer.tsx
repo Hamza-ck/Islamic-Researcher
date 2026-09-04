@@ -51,18 +51,18 @@ export const LibraryExplorer: React.FC<LibraryExplorerProps> = ({
     arabicFontSize === 'large' ? 'text-xl sm:text-2xl' : 'text-lg sm:text-xl';
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8 animate-in fade-in duration-300">
+    <div className="w-full max-w-6xl mx-auto px-4 sm:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
       {/* Top Banner & Tab Switcher */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-white/[0.08] pb-6">
-        <div className="space-y-1">
+        <div className="space-y-1.5 min-w-0">
           <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs font-medium text-blue-400">
             <BookMarked className="w-3.5 h-3.5" />
             <span>Islamic Reference Library</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white break-words">
             Canonical Hadith & Scholar Discourse Archives
           </h1>
-          <p className="text-sm text-slate-400">
+          <p className="text-xs sm:text-sm text-slate-400 max-w-3xl leading-relaxed">
             Browse section-wise hadiths with chapter headings and explore digitized transcripts of Dr. Israr Ahmed & Sayyid Qutb.
           </p>
         </div>
@@ -100,7 +100,7 @@ export const LibraryExplorer: React.FC<LibraryExplorerProps> = ({
       {activeTab === 'hadith' && (
         <div className="space-y-6">
           {/* Collection Selector Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 w-full">
             {HADITH_COLLECTIONS.map((col) => (
               <button
                 key={col.id}

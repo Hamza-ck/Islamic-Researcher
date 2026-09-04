@@ -60,8 +60,8 @@ export const GeminiSidebar: React.FC<GeminiSidebarProps> = ({
       <aside 
         className={`fixed top-0 left-0 bottom-0 z-50 lg:z-30 bg-[#1e1f20] border-r border-white/[0.08] transition-all duration-300 flex flex-col ${
           isOpen 
-            ? 'translate-x-0 w-72 sm:w-80 shadow-2xl lg:shadow-none' 
-            : '-translate-x-full lg:translate-x-0 lg:w-18'
+            ? 'translate-x-0 w-64 shadow-2xl lg:shadow-none' 
+            : '-translate-x-full lg:translate-x-0 lg:w-16'
         }`}
       >
         {/* Top Header & Collapse Toggle */}
@@ -209,27 +209,27 @@ export const GeminiSidebar: React.FC<GeminiSidebarProps> = ({
         )}
 
         {/* Bottom Pinned Footer & Settings */}
-        <div className="p-3 border-t border-white/[0.06] space-y-2 mt-auto">
+        <div className="p-3 border-t border-white/[0.08] space-y-2 mt-auto bg-[#18191a]/40">
           {/* Backend Status indicator */}
-          <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-[#18191a] text-[11px] font-mono ${
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-xl bg-[#252729] border border-white/[0.06] text-xs ${
             isOpen ? 'justify-between' : 'justify-center'
           }`}>
-            <div className="flex items-center gap-1.5">
-              <span className={`w-2 h-2 rounded-full ${
+            <div className="flex items-center gap-2">
+              <span className={`w-2 h-2 rounded-full shrink-0 ${
                 isLiveBackend === true 
-                  ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]' 
+                  ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]' 
                   : isLiveBackend === false 
                     ? 'bg-amber-400' 
                     : 'bg-slate-500 animate-pulse'
               }`} />
               {isOpen && (
-                <span className="text-slate-400 text-[11px]">
+                <span className="text-slate-300 font-medium text-xs">
                   {isLiveBackend === true ? 'Live Vector DB' : isLiveBackend === false ? 'Offline Fallback' : 'Connecting...'}
                 </span>
               )}
             </div>
             {isOpen && isLiveBackend === true && (
-              <span className="text-[10px] text-emerald-400/80 font-bold">45K+ Docs</span>
+              <span className="text-[10px] text-emerald-400 font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 font-mono">45K+ Docs</span>
             )}
           </div>
 
@@ -239,12 +239,12 @@ export const GeminiSidebar: React.FC<GeminiSidebarProps> = ({
               onOpenSettings();
               closeOnMobile();
             }}
-            className={`w-full flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-xs text-slate-400 hover:text-white hover:bg-white/[0.05] transition-colors ${
+            className={`w-full flex items-center gap-2.5 py-2 px-3 rounded-xl text-xs font-medium text-slate-300 hover:text-white hover:bg-white/[0.06] transition-colors ${
               !isOpen && 'justify-center px-0'
             }`}
             title="Settings & Models"
           >
-            <Settings className="w-4 h-4 shrink-0" />
+            <Settings className="w-4 h-4 shrink-0 text-slate-400" />
             {isOpen && <span>Settings & API Endpoint</span>}
           </button>
         </div>
