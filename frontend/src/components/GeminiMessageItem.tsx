@@ -16,6 +16,7 @@ import {
 import { ChatMessage, RawSearchResult } from '../types';
 import { FolioCard } from './FolioCard';
 import { ResearchWorkspace } from './ResearchWorkspace';
+import { FormattedContent } from './FormattedContent';
 
 interface GeminiMessageItemProps {
   message: ChatMessage;
@@ -101,67 +102,16 @@ export const GeminiMessageItem: React.FC<GeminiMessageItemProps> = ({
             research={message.research}
             arabicFontSize={arabicFontSize}
             isDemo={message.isDemo}
+            onRegenerate={onRegenerate}
+            onFeedback={onFeedback}
+            onExportCitation={onExportCitation}
           />
-          {/* Action Toolbar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/[0.06] text-xs text-slate-400">
-            <div className="flex items-center gap-1">
-              <button
-                onClick={handleCopy}
-                className="p-1.5 rounded-lg hover:text-white hover:bg-white/[0.06] transition-colors flex items-center gap-1.5"
-                title="Copy answer"
-              >
-                {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                <span>{copied ? 'Copied' : 'Copy'}</span>
-              </button>
-
-              <button
-                onClick={() => handleRate(1)}
-                className={`p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors ${
-                  userRating === 1 ? 'text-emerald-400 bg-emerald-500/10' : 'hover:text-white'
-                }`}
-                title="Helpful analysis"
-              >
-                <ThumbsUp className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => handleRate(-1)}
-                className={`p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors ${
-                  userRating === -1 ? 'text-rose-400 bg-rose-500/10' : 'hover:text-white'
-                }`}
-                title="Needs refinement"
-              >
-                <ThumbsDown className="w-4 h-4" />
-              </button>
-
-              {onRegenerate && (
-                <button
-                  onClick={onRegenerate}
-                  className="p-1.5 rounded-lg hover:text-white hover:bg-white/[0.06] transition-colors flex items-center gap-1.5"
-                  title="Regenerate synthesis"
-                >
-                  <RotateCw className="w-4 h-4" />
-                  <span className="hidden sm:inline">Regenerate</span>
-                </button>
-              )}
-
-              {onExportCitation && sources.length > 0 && (
-                <button
-                  onClick={() => onExportCitation(sources)}
-                  className="p-1.5 rounded-lg hover:text-white hover:bg-white/[0.06] transition-colors flex items-center gap-1.5"
-                  title="Export Academic Citation Folio"
-                >
-                  <Share2 className="w-4 h-4" />
-                  <span className="hidden sm:inline">Export Folio</span>
-                </button>
-              )}
-            </div>
-          </div>
         </div>
       ) : (
-        /* Main Synthesized Markdown Content for standard mode */
+        /* Main Synthesized Content for standard mode */
         <div className="pl-0 sm:pl-11 space-y-4">
-          <div className="prose prose-invert max-w-none text-slate-200 text-sm sm:text-base leading-relaxed space-y-3 font-normal whitespace-pre-wrap">
-            {message.content}
+          <div className="text-slate-200 text-sm sm:text-base leading-relaxed space-y-3 font-normal">
+            <FormattedContent content={message.content} />
           </div>
 
           {/* Action Toolbar */}
