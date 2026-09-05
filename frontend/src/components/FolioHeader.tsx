@@ -31,15 +31,15 @@ export const FolioHeader: React.FC<HeaderProps> = ({
 
           <div>
             <div className="flex items-baseline gap-2">
-              <span className="font-display font-bold text-lg sm:text-xl tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
-                Islamic Researcher
+              <span className="font-display font-extrabold text-lg sm:text-xl tracking-tight bg-gradient-to-r from-white via-slate-100 to-emerald-300 bg-clip-text text-transparent">
+                DALIL RESEARCH
               </span>
               <span className="font-amiri text-lg text-emerald-400/90 font-bold hidden sm:inline" lang="ar">
-                بَاحِثُ النُّصُوص
+                دَلِيل الأَبْحَاث
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 font-medium hidden md:block">
-              Quran, Verified Hadith & Tafsir Search Engine
+            <p className="text-[11px] text-emerald-400/90 font-medium hidden md:block">
+              Search. Verify. Understand.
             </p>
           </div>
         </div>

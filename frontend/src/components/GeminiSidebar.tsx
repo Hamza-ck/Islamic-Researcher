@@ -74,8 +74,8 @@ export const GeminiSidebar: React.FC<GeminiSidebarProps> = ({
                 </div>
               </div>
               <div className="leading-tight truncate">
-                <span className="text-sm font-bold tracking-tight text-white block">Islamic Research</span>
-                <span className="text-[10px] text-blue-400 font-medium tracking-wide uppercase block">Gemini Engine</span>
+                <span className="text-sm font-extrabold tracking-tight text-white block">DALIL RESEARCH</span>
+                <span className="text-[10px] text-emerald-400/90 font-medium tracking-wide block">Search. Verify. Understand.</span>
               </div>
             </div>
           ) : (

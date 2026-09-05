@@ -282,7 +282,7 @@ export function App() {
             <div className="flex items-center gap-2.5 truncate">
               <span className="text-sm font-semibold text-slate-100 truncate">
                 {activeView === 'chat'
-                  ? 'Islamic Research Studio'
+                  ? 'Dalil Research Studio'
                   : activeView === 'library'
                   ? 'Canonical Hadith Library'
                   : 'Scholar Transcripts & Treatises'}

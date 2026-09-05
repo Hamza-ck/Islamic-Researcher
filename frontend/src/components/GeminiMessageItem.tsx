@@ -75,7 +75,7 @@ export const GeminiMessageItem: React.FC<GeminiMessageItemProps> = ({
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm font-bold text-white tracking-wide">
-            Islamic Research Assistant
+            Dalil Research Assistant
           </span>
           {message.metadata?.confidence && (
             <span className={`text-[10px] uppercase font-mono px-2 py-0.5 rounded-full border ${
