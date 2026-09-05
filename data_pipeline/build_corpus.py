@@ -28,6 +28,10 @@ def main():
     for typ,filename in sources.items():
         for rec in load_jsonl(RAW_DIR/filename):
             rec=dict(rec); rec.setdefault('type',typ); rec.setdefault('metadata',{})
+            rec['metadata'].setdefault('source_priority', 'primary' if typ in {'quran','hadith'} else 'commentary')
+            rec['metadata'].setdefault('provenance', rec['metadata'].get('provenance_status') or f'{typ}_ingest')
+            rec['metadata'].setdefault('license', rec['metadata'].get('license') or 'see docs/data-sources.md')
+            rec.setdefault('original_text', rec.get('text',''))
             for item in chunk_record(rec,MAX_CHUNK_CHARS,CHUNK_OVERLAP_CHARS):
                 if item['id'] in seen: continue
                 seen.add(item['id']); out.append(item)

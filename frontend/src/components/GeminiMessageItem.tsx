@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { ChatMessage, RawSearchResult } from '../types';
 import { FolioCard } from './FolioCard';
+import { ResearchWorkspace } from './ResearchWorkspace';
 
 interface GeminiMessageItemProps {
   message: ChatMessage;
@@ -93,129 +94,194 @@ export const GeminiMessageItem: React.FC<GeminiMessageItemProps> = ({
         </div>
       </div>
 
-      {/* Main Synthesized Markdown Content */}
-      <div className="pl-0 sm:pl-11 space-y-4">
-        <div className="prose prose-invert max-w-none text-slate-200 text-sm sm:text-base leading-relaxed space-y-3 font-normal whitespace-pre-wrap">
-          {message.content}
-        </div>
-
-        {/* Action Toolbar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/[0.06] text-xs text-slate-400">
-          <div className="flex items-center gap-1">
-            {/* Copy Button */}
-            <button
-              onClick={handleCopy}
-              className="p-1.5 rounded-lg hover:text-white hover:bg-white/[0.06] transition-colors flex items-center gap-1.5"
-              title="Copy answer"
-            >
-              {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-              <span>{copied ? 'Copied' : 'Copy'}</span>
-            </button>
-
-            {/* Thumbs Up / Down */}
-            <button
-              onClick={() => handleRate(1)}
-              className={`p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors ${
-                userRating === 1 ? 'text-emerald-400 bg-emerald-500/10' : 'hover:text-white'
-              }`}
-              title="Helpful analysis"
-            >
-              <ThumbsUp className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => handleRate(-1)}
-              className={`p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors ${
-                userRating === -1 ? 'text-rose-400 bg-rose-500/10' : 'hover:text-white'
-              }`}
-              title="Needs refinement"
-            >
-              <ThumbsDown className="w-4 h-4" />
-            </button>
-
-            {/* Regenerate Button */}
-            {onRegenerate && (
+      {/* If full research payload is present, render the interactive Research Workspace */}
+      {message.research ? (
+        <div className="pl-0 sm:pl-11 space-y-4">
+          <ResearchWorkspace
+            research={message.research}
+            arabicFontSize={arabicFontSize}
+            isDemo={message.isDemo}
+          />
+          {/* Action Toolbar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/[0.06] text-xs text-slate-400">
+            <div className="flex items-center gap-1">
               <button
-                onClick={onRegenerate}
+                onClick={handleCopy}
                 className="p-1.5 rounded-lg hover:text-white hover:bg-white/[0.06] transition-colors flex items-center gap-1.5"
-                title="Regenerate synthesis"
+                title="Copy answer"
               >
-                <RotateCw className="w-4 h-4" />
-                <span className="hidden sm:inline">Regenerate</span>
+                {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                <span>{copied ? 'Copied' : 'Copy'}</span>
               </button>
-            )}
 
-            {/* Export Citation Folio */}
-            {onExportCitation && sources.length > 0 && (
               <button
-                onClick={() => onExportCitation(sources)}
-                className="p-1.5 rounded-lg hover:text-white hover:bg-white/[0.06] transition-colors flex items-center gap-1.5"
-                title="Export Academic Citation Folio"
+                onClick={() => handleRate(1)}
+                className={`p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors ${
+                  userRating === 1 ? 'text-emerald-400 bg-emerald-500/10' : 'hover:text-white'
+                }`}
+                title="Helpful analysis"
               >
-                <Share2 className="w-4 h-4" />
-                <span className="hidden sm:inline">Export Folio</span>
+                <ThumbsUp className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => handleRate(-1)}
+                className={`p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors ${
+                  userRating === -1 ? 'text-rose-400 bg-rose-500/10' : 'hover:text-white'
+                }`}
+                title="Needs refinement"
+              >
+                <ThumbsDown className="w-4 h-4" />
+              </button>
+
+              {onRegenerate && (
+                <button
+                  onClick={onRegenerate}
+                  className="p-1.5 rounded-lg hover:text-white hover:bg-white/[0.06] transition-colors flex items-center gap-1.5"
+                  title="Regenerate synthesis"
+                >
+                  <RotateCw className="w-4 h-4" />
+                  <span className="hidden sm:inline">Regenerate</span>
+                </button>
+              )}
+
+              {onExportCitation && sources.length > 0 && (
+                <button
+                  onClick={() => onExportCitation(sources)}
+                  className="p-1.5 rounded-lg hover:text-white hover:bg-white/[0.06] transition-colors flex items-center gap-1.5"
+                  title="Export Academic Citation Folio"
+                >
+                  <Share2 className="w-4 h-4" />
+                  <span className="hidden sm:inline">Export Folio</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Main Synthesized Markdown Content for standard mode */
+        <div className="pl-0 sm:pl-11 space-y-4">
+          <div className="prose prose-invert max-w-none text-slate-200 text-sm sm:text-base leading-relaxed space-y-3 font-normal whitespace-pre-wrap">
+            {message.content}
+          </div>
+
+          {/* Action Toolbar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/[0.06] text-xs text-slate-400">
+            <div className="flex items-center gap-1">
+              {/* Copy Button */}
+              <button
+                onClick={handleCopy}
+                className="p-1.5 rounded-lg hover:text-white hover:bg-white/[0.06] transition-colors flex items-center gap-1.5"
+                title="Copy answer"
+              >
+                {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                <span>{copied ? 'Copied' : 'Copy'}</span>
+              </button>
+
+              {/* Thumbs Up / Down */}
+              <button
+                onClick={() => handleRate(1)}
+                className={`p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors ${
+                  userRating === 1 ? 'text-emerald-400 bg-emerald-500/10' : 'hover:text-white'
+                }`}
+                title="Helpful analysis"
+              >
+                <ThumbsUp className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => handleRate(-1)}
+                className={`p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors ${
+                  userRating === -1 ? 'text-rose-400 bg-rose-500/10' : 'hover:text-white'
+                }`}
+                title="Needs refinement"
+              >
+                <ThumbsDown className="w-4 h-4" />
+              </button>
+
+              {/* Regenerate Button */}
+              {onRegenerate && (
+                <button
+                  onClick={onRegenerate}
+                  className="p-1.5 rounded-lg hover:text-white hover:bg-white/[0.06] transition-colors flex items-center gap-1.5"
+                  title="Regenerate synthesis"
+                >
+                  <RotateCw className="w-4 h-4" />
+                  <span className="hidden sm:inline">Regenerate</span>
+                </button>
+              )}
+
+              {/* Export Citation Folio */}
+              {onExportCitation && sources.length > 0 && (
+                <button
+                  onClick={() => onExportCitation(sources)}
+                  className="p-1.5 rounded-lg hover:text-white hover:bg-white/[0.06] transition-colors flex items-center gap-1.5"
+                  title="Export Academic Citation Folio"
+                >
+                  <Share2 className="w-4 h-4" />
+                  <span className="hidden sm:inline">Export Folio</span>
+                </button>
+              )}
+            </div>
+
+            {/* Collapsible Sources Drawer Toggle */}
+            {sources.length > 0 && (
+              <button
+                onClick={() => setShowSources(!showSources)}
+                className="inline-flex items-center gap-2 py-1 px-3 rounded-full bg-[#282a2c] hover:bg-[#333538] border border-white/10 text-xs text-slate-200 font-medium transition-all"
+              >
+                <Layers className="w-3.5 h-3.5 text-blue-400" />
+                <span>{sources.length} Cited Sources</span>
+                {showSources ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
               </button>
             )}
           </div>
 
-          {/* Collapsible Sources Drawer Toggle */}
-          {sources.length > 0 && (
-            <button
-              onClick={() => setShowSources(!showSources)}
-              className="inline-flex items-center gap-2 py-1 px-3 rounded-full bg-[#282a2c] hover:bg-[#333538] border border-white/10 text-xs text-slate-200 font-medium transition-all"
-            >
-              <Layers className="w-3.5 h-3.5 text-blue-400" />
-              <span>{sources.length} Cited Sources</span>
-              {showSources ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-            </button>
+          {/* Expanded Sources / Folios Accordion */}
+          {showSources && sources.length > 0 && (
+            <div className="pt-4 space-y-4 border-t border-white/[0.08] animate-in fade-in duration-200">
+              <div className="flex items-center justify-between text-xs text-slate-400">
+                <span className="font-semibold uppercase tracking-wider text-slate-300">
+                  Verified Evidentiary Passages
+                </span>
+                <span>{sources.length} passages matched</span>
+              </div>
+
+              <div className="space-y-4">
+                {sources.map((folio, idx) => (
+                  <div key={folio.id || idx} className="space-y-2">
+                    <FolioCard
+                      folio={folio}
+                      index={idx}
+                      arabicFontSize={arabicFontSize}
+                    />
+
+                    {/* If this is a video/lecture transcript with a timestamp anchor, show quick watch button */}
+                    {folio.metadata?.video_url && (
+                      <div className="px-4 py-2 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2 text-purple-300">
+                          <Mic className="w-4 h-4 text-purple-400" />
+                          <span>Lecture Discourse: <strong>{folio.metadata.scholar || 'Scholar Lecture'}</strong></span>
+                          {folio.metadata.timestamp_anchor && (
+                            <span className="font-mono text-purple-400">@{folio.metadata.timestamp_anchor}</span>
+                          )}
+                        </div>
+                        <a
+                          href={folio.metadata.video_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-medium transition-colors"
+                        >
+                          <span>Listen to Discourse</span>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
-
-        {/* Expanded Sources / Folios Accordion */}
-        {showSources && sources.length > 0 && (
-          <div className="pt-4 space-y-4 border-t border-white/[0.08] animate-in fade-in duration-200">
-            <div className="flex items-center justify-between text-xs text-slate-400">
-              <span className="font-semibold uppercase tracking-wider text-slate-300">
-                Verified Evidentiary Passages
-              </span>
-              <span>{sources.length} passages matched</span>
-            </div>
-
-            <div className="space-y-4">
-              {sources.map((folio, idx) => (
-                <div key={folio.id || idx} className="space-y-2">
-                  <FolioCard
-                    folio={folio}
-                    index={idx}
-                    arabicFontSize={arabicFontSize}
-                  />
-
-                  {/* If this is a video/lecture transcript with a timestamp anchor, show quick watch button */}
-                  {folio.metadata?.video_url && (
-                    <div className="px-4 py-2 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-2 text-purple-300">
-                        <Mic className="w-4 h-4 text-purple-400" />
-                        <span>Lecture Discourse: <strong>{folio.metadata.scholar || 'Scholar Lecture'}</strong></span>
-                        {folio.metadata.timestamp_anchor && (
-                          <span className="font-mono text-purple-400">@{folio.metadata.timestamp_anchor}</span>
-                        )}
-                      </div>
-                      <a
-                        href={folio.metadata.video_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-medium transition-colors"
-                      >
-                        <span>Listen to Discourse</span>
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 };

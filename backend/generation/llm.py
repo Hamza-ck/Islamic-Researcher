@@ -1,6 +1,6 @@
 import os,time
 from dataclasses import dataclass,field
-from backend.core.config import GEMINI_MODEL,ALLOW_REMOTE_LLM
+from backend.core.config import GEMINI_MODEL, ALLOW_REMOTE_LLM, settings
 from backend.generation.verifier import verify_answer
 
 @dataclass
@@ -32,11 +32,11 @@ def _fallback_answer(query, passages):
     return '\n'.join(lines)
 
 def _gemini(query,passages,style,detail,temp):
-    if not ALLOW_REMOTE_LLM or not os.getenv('GEMINI_API_KEY'): return None
+    if not ALLOW_REMOTE_LLM or not settings.gemini_api_key: return None
     try:
         from google import genai
         from google.genai import types
-        client=genai.Client(api_key=os.environ['GEMINI_API_KEY'])
+        client=genai.Client(api_key=settings.gemini_api_key)
         context='\n\n'.join(f"[{i+1}] {p.get('citation')} | {p.get('type')} | {p.get('metadata',{}).get('grade_category','')}\n{p.get('text','')}" for i,p in enumerate(passages))
         prompt=f'''Question: {query}\n\nEvidence:\n{context}\n\nAnswer only from the evidence. Do not invent verses, hadith, grades, scholars, or citations. Every factual claim must include one or more exact source citations from the evidence. If evidence is insufficient, say so. Distinguish source text from interpretation and preserve scholarly disagreement. Style: {style}. Detail: {detail}.'''
         r=client.models.generate_content(model=GEMINI_MODEL,contents=prompt,config=types.GenerateContentConfig(temperature=temp,max_output_tokens=4096))
@@ -44,8 +44,29 @@ def _gemini(query,passages,style,detail,temp):
     except Exception:
         return None
 
+def _local_llm(query, passages, style, detail, temp):
+    if not settings.local_llm_model:
+        return None
+    try:
+        from transformers import pipeline
+        ctx = '\n'.join(f"- {p.get('citation')}: {p.get('text','')[:400]}" for p in passages[:8])
+        prompt = (
+            'Answer only from the evidence. Do not invent citations. '
+            f'If evidence is insufficient, say so.\nQuestion: {query}\nEvidence:\n{ctx}\nAnswer:'
+        )
+        pipe = pipeline('text-generation', model=settings.local_llm_model)
+        out = pipe(prompt, max_new_tokens=400, temperature=max(temp, 0.01), do_sample=temp > 0)
+        text = out[0]['generated_text']
+        answer = text.split('Answer:', 1)[-1].strip() if 'Answer:' in text else text
+        return answer or None, f'local:{settings.local_llm_model}', 0
+    except Exception:
+        return None
+
+
 def synthesize(query,passages,response_style='scholarly',detail_level='standard',temperature=0.2):
     start=time.time(); generated=_gemini(query,passages,response_style,detail_level,temperature)
+    if not generated:
+        generated=_local_llm(query,passages,response_style,detail_level,temperature)
     if generated:
         answer,model,tokens=generated
     else:

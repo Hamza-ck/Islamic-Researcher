@@ -1,18 +1,16 @@
-import os
-from backend.core.config import RERANK_CANDIDATES
+from backend.core.config import ENABLE_RERANKER, RERANK_CANDIDATES, RERANKER_MODEL
 
 _model=None
 
 def _get_model():
     global _model
     if _model is None:
-        if os.getenv('ENABLE_RERANKER', 'false').lower() not in {'1', 'true', 'yes'}:
+        if not ENABLE_RERANKER:
             _model = False
             return _model
         try:
             from sentence_transformers import CrossEncoder
-            model_name = os.getenv('RERANKER_MODEL', 'BAAI/bge-reranker-base')
-            _model = CrossEncoder(model_name)
+            _model = CrossEncoder(RERANKER_MODEL)
         except Exception:
             _model = False
     return _model

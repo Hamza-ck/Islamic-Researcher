@@ -8,6 +8,37 @@ TOKEN_RE = re.compile(r"[\w\u0600-\u06ff]+", re.UNICODE)
 def tokenize(text):
     return [x.lower() for x in TOKEN_RE.findall(text or '') if len(x) > 1]
 
+def get_document(doc_id: str, db_path=SQLITE_PATH):
+    if not Path(db_path).exists():
+        ensure_db(db_path=db_path)
+    if not Path(db_path).exists() or not doc_id:
+        return None
+    con = sqlite3.connect(db_path)
+    try:
+        row = con.execute(
+            'SELECT id,type,citation,text,arabic,metadata FROM documents WHERE id=?',
+            (doc_id,),
+        ).fetchone()
+    except sqlite3.Error:
+        row = None
+    con.close()
+    if not row:
+        return None
+    rid, typ, cit, text, arabic, meta_json = row
+    meta = json.loads(meta_json or '{}')
+    return {
+        'id': rid,
+        'type': typ,
+        'citation': cit,
+        'text': text,
+        'arabic': arabic,
+        'metadata': meta,
+        'score': 1.0,
+        'origin': 'offline_demo' if meta.get('offline_demo') else 'internal',
+        'source_priority': meta.get('source_priority', 'primary'),
+    }
+
+
 def ensure_db(corpus_path=CORPUS_PATH, db_path=SQLITE_PATH):
     if not Path(corpus_path).exists():
         return False

@@ -22,9 +22,12 @@ export const FolioCard: React.FC<FolioCardProps> = ({
   const [copiedArabic, setCopiedArabic] = useState(false);
   const [copiedEnglish, setCopiedEnglish] = useState(false);
 
-  const meta = folio.metadata;
+  const meta = folio.metadata || {};
   const isQuran = folio.type === 'quran';
   const isHadith = folio.type === 'hadith';
+
+  const isDemo = folio.origin === 'offline_demo' || Boolean(meta.offline_demo);
+  const isExternal = folio.origin === 'external' || Boolean(meta.external);
 
   const handleCopyArabic = () => {
     if (!folio.arabic) return;
@@ -112,6 +115,16 @@ export const FolioCard: React.FC<FolioCardProps> = ({
                 </span>
                 {getTypeBadge()}
               </div>
+              {isDemo && (
+                <div className="text-[10px] font-bold tracking-wide text-amber-200 bg-amber-500/20 border border-amber-400/40 rounded-lg px-2 py-1">
+                  OFFLINE DEMO DATA
+                </div>
+              )}
+              {isExternal && (
+                <div className="text-[10px] font-bold tracking-wide text-purple-200 bg-purple-500/20 border border-purple-400/40 rounded-lg px-2 py-1">
+                  External source
+                </div>
+              )}
 
               {/* Source Reference Header */}
               <div>
@@ -147,13 +160,25 @@ export const FolioCard: React.FC<FolioCardProps> = ({
               {folio.score !== undefined && (
                 <div className="pt-1 flex items-center gap-1.5 text-xs font-mono text-slate-400">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  <span>Relevance: {(folio.score * 100).toFixed(0)}%</span>
+                  <span>Relevance: {(folio.score * 100).toFixed(0)}% (similarity, not truth)</span>
                 </div>
               )}
             </div>
 
             {/* Quick Actions */}
-            <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between gap-1.5 text-xs">
+            <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between gap-1.5 text-xs flex-wrap">
+              <button
+                type="button"
+                onClick={() => {
+                  const href = meta.url || folio.metadata?.timestamp_url;
+                  if (href) window.open(String(href), '_blank', 'noopener,noreferrer');
+                  else document.getElementById(`folio-${folio.id}`)?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-white border border-white/10 text-xs font-medium transition-all"
+                title="Open this evidence unit"
+              >
+                <span>Open</span>
+              </button>
               <button
                 type="button"
                 onClick={() => setShowCitationModal(true)}

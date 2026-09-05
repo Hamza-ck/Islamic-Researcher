@@ -10,7 +10,7 @@ import {
   Mic, 
   BookMarked
 } from 'lucide-react';
-import { SearchMode, FolioFilterState, SynthesisOptions, SourceType } from '../types';
+import { SearchMode, ResearchMode, FolioFilterState, SynthesisOptions, SourceType } from '../types';
 
 interface GeminiInputDeckProps {
   query: string;
@@ -23,6 +23,10 @@ interface GeminiInputDeckProps {
   onFilterChange: (filters: FolioFilterState) => void;
   synthesisOptions: SynthesisOptions;
   onSynthesisOptionsChange: (opts: SynthesisOptions) => void;
+  researchMode?: ResearchMode;
+  onResearchModeChange?: (mode: ResearchMode) => void;
+  allowExternal?: boolean;
+  onAllowExternalChange?: (allow: boolean) => void;
 }
 
 export const GeminiInputDeck: React.FC<GeminiInputDeckProps> = ({
@@ -36,6 +40,10 @@ export const GeminiInputDeck: React.FC<GeminiInputDeckProps> = ({
   onFilterChange,
   synthesisOptions,
   onSynthesisOptionsChange,
+  researchMode = 'research',
+  onResearchModeChange,
+  allowExternal = false,
+  onAllowExternalChange,
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [showFilters, setShowFilters] = useState(false);
@@ -199,9 +207,9 @@ export const GeminiInputDeck: React.FC<GeminiInputDeckProps> = ({
         </div>
 
         {/* Bottom Toolbar inside the pill */}
-        <div className="flex items-center justify-between pt-1 border-t border-white/[0.04] text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-white/[0.04] text-xs">
           {/* Mode Switcher Pill */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             <button
               onClick={() => onModeChange(mode === 'ask' ? 'search' : 'ask')}
               className={`inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium transition-all ${
@@ -224,6 +232,43 @@ export const GeminiInputDeck: React.FC<GeminiInputDeckProps> = ({
               )}
             </button>
 
+            {/* Research Depth Switcher (Visible in Ask Mode) */}
+            {mode === 'ask' && onResearchModeChange && (
+              <div className="hidden sm:inline-flex items-center p-0.5 rounded-full bg-white/[0.03] border border-white/[0.06]">
+                {(['quick', 'research', 'deep'] as const).map((rm) => (
+                  <button
+                    key={rm}
+                    type="button"
+                    onClick={() => onResearchModeChange(rm)}
+                    className={`px-2 py-0.5 rounded-full text-[11px] capitalize font-medium transition-all ${
+                      researchMode === rm
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    {rm}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* External Research Toggle */}
+            {mode === 'ask' && onAllowExternalChange && (
+              <button
+                type="button"
+                onClick={() => onAllowExternalChange(!allowExternal)}
+                className={`hidden md:inline-flex items-center gap-1 py-1 px-2.5 rounded-full text-[11px] font-medium border transition-all ${
+                  allowExternal
+                    ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
+                    : 'bg-white/[0.03] text-slate-400 hover:text-slate-200 border-white/[0.06]'
+                }`}
+                title="Include vetted external sources if corpus is insufficient"
+              >
+                <span>External Web/Corpus</span>
+                <span className={`w-1.5 h-1.5 rounded-full ${allowExternal ? 'bg-purple-400' : 'bg-slate-500'}`} />
+              </button>
+            )}
+
             {/* Filter Toggle Button */}
             <button
               onClick={() => setShowFilters(!showFilters)}
@@ -244,7 +289,7 @@ export const GeminiInputDeck: React.FC<GeminiInputDeckProps> = ({
           </div>
 
           {/* Grounding Disclaimer */}
-          <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-slate-500">
+          <div className="hidden lg:flex items-center gap-1.5 text-[11px] text-slate-500">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/80" />
             <span>Grounded Corpus & Transcripts</span>
           </div>

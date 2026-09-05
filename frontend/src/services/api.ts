@@ -1,4 +1,4 @@
-import { RawSearchResult, SearchMode, FolioFilterState, SynthesisOptions, SynthesisMetadata, AskResponse, SearchResponse } from '../types';
+import { RawSearchResult, SearchMode, FolioFilterState, SynthesisOptions, SynthesisMetadata, AskResponse, SearchResponse, ResearchMode, ResearchPayload } from '../types';
 import { MOCK_CORPUS, SYNTHESIS_PRESETS } from '../data/mockCorpus';
 
 const STORAGE_KEY_BASE_URL = 'folio_backend_url';
@@ -118,7 +118,9 @@ function searchLocalMockCorpus(
 
     return {
       ...item,
-      score: Math.min(0.99, (item.score || 0.8) + (score * 0.05))
+      origin: 'offline_demo' as const,
+      score: Math.min(0.55, (item.score || 0.3) * 0.5 + score * 0.02),
+      metadata: { ...item.metadata, offline_demo: true },
     };
   });
 
@@ -128,11 +130,13 @@ function searchLocalMockCorpus(
 
 export interface QueryExecutionResult {
   isLive: boolean;
+  isDemo?: boolean;
   results: RawSearchResult[];
   answer?: string;
   error?: string;
   metadata?: SynthesisMetadata | null;
   queryId?: string | null;
+  research?: ResearchPayload | null;
 }
 
 export async function executeFolioQuery(
@@ -271,21 +275,78 @@ export async function executeFolioQuery(
 
     return {
       isLive: false,
-      results: fallbackResults,
-      answer: synthesis || 'No direct synthesis available in offline corpus for this query.',
+      isDemo: true,
+      results: fallbackResults.map((r) => ({ ...r, origin: 'offline_demo' as const, metadata: { ...r.metadata, offline_demo: true } })),
+      answer: `[OFFLINE DEMO DATA]\n\n${synthesis || 'No direct synthesis available in offline corpus for this query.'}`,
     };
   }
 
   return {
     isLive: false,
-    results: fallbackResults,
+    isDemo: true,
+    results: fallbackResults.map((r) => ({ ...r, origin: 'offline_demo' as const, metadata: { ...r.metadata, offline_demo: true } })),
   };
 }
 
 
-/**
- * Submit user feedback on a synthesized answer.
- */
+export async function executeResearchQuery(
+  query: string,
+  mode: ResearchMode,
+  filterState: FolioFilterState,
+  topK: number,
+  synthesisOptions: SynthesisOptions,
+  allowExternal: boolean,
+): Promise<QueryExecutionResult> {
+  const baseUrl = getStoredBackendUrl();
+  const payload: Record<string, unknown> = {
+    query: query.trim(),
+    mode,
+    top_k: topK,
+    allow_external: allowExternal,
+    response_style: synthesisOptions.responseStyle,
+    detail_level: synthesisOptions.detailLevel,
+    temperature: synthesisOptions.temperature,
+  };
+  if (filterState.types.length > 0) payload.types = filterState.types;
+  if (filterState.collections.length > 0) payload.collections = filterState.collections;
+  if (filterState.minGrade) payload.min_grade = filterState.minGrade;
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), mode === 'deep' ? 60000 : 45000);
+    const res = await fetch(`${baseUrl}/research`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      const data: ResearchPayload = await res.json();
+      return {
+        isLive: true,
+        isDemo: false,
+        results: data.sources || [],
+        answer: data.answer,
+        research: data,
+        queryId: data.research_id,
+        metadata: {
+          confidence: data.confidence?.level || 'low',
+          confidence_score: data.confidence?.score,
+          model_used: 'research-engine',
+          tokens_used: 0,
+          latency_ms: 0,
+          response_style: synthesisOptions.responseStyle,
+          temperature: synthesisOptions.temperature,
+        },
+      };
+    }
+  } catch (err) {
+    console.info('Research endpoint unreachable, falling back:', err);
+  }
+  const fallback = await executeFolioQuery('ask', query, filterState, topK, synthesisOptions);
+  return { ...fallback, isDemo: true };
+}
 export async function submitFeedback(
   queryId: string,
   rating: number,

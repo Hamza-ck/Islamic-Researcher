@@ -1,0 +1,143 @@
+{
+  "benchmark_queries_count": 8,
+  "avg_rule_latency_ms": 0.015,
+  "avg_neural_latency_ms": 0.01,
+  "comparisons": [
+    {
+      "query": "What does the Quran say about patience in hardship?",
+      "rules": {
+        "quran_weight": 1.288,
+        "hadith_weight": 1.05,
+        "tafsir_weight": 0.98,
+        "external_research_probability": 0.05
+      },
+      "neural": {
+        "quran_weight": 1.288,
+        "hadith_weight": 1.05,
+        "tafsir_weight": 0.98,
+        "external_research_probability": 0.05
+      },
+      "rule_latency_ms": 0.04,
+      "neural_latency_ms": 0.02
+    },
+    {
+      "query": "Sahih Hadith regarding intention in actions from Bukhari",
+      "rules": {
+        "quran_weight": 1.12,
+        "hadith_weight": 1.2075,
+        "tafsir_weight": 0.98,
+        "external_research_probability": 0.05
+      },
+      "neural": {
+        "quran_weight": 1.12,
+        "hadith_weight": 1.2075,
+        "tafsir_weight": 0.98,
+        "external_research_probability": 0.05
+      },
+      "rule_latency_ms": 0.018,
+      "neural_latency_ms": 0.011
+    },
+    {
+      "query": "Tafsir of Surah Al-Baqarah verse 153 by Ibn Kathir",
+      "rules": {
+        "quran_weight": 1.288,
+        "hadith_weight": 1.05,
+        "tafsir_weight": 1.127,
+        "external_research_probability": 0.05
+      },
+      "neural": {
+        "quran_weight": 1.288,
+        "hadith_weight": 1.05,
+        "tafsir_weight": 1.127,
+        "external_research_probability": 0.05
+      },
+      "rule_latency_ms": 0.009,
+      "neural_latency_ms": 0.008
+    },
+    {
+      "query": "Difference of opinion between Abu Hanifa and Shafi'i on wudu nullification",
+      "rules": {
+        "quran_weight": 1.12,
+        "hadith_weight": 1.05,
+        "tafsir_weight": 0.98,
+        "external_research_probability": 0.05
+      },
+      "neural": {
+        "quran_weight": 1.12,
+        "hadith_weight": 1.05,
+        "tafsir_weight": 0.98,
+        "external_research_probability": 0.05
+      },
+      "rule_latency_ms": 0.009,
+      "neural_latency_ms": 0.009
+    },
+    {
+      "query": "Contemporary discussion and lecture on Islamic finance and riba",
+      "rules": {
+        "quran_weight": 1.12,
+        "hadith_weight": 1.05,
+        "tafsir_weight": 0.98,
+        "external_research_probability": 0.35
+      },
+      "neural": {
+        "quran_weight": 1.12,
+        "hadith_weight": 1.05,
+        "tafsir_weight": 0.98,
+        "external_research_probability": 0.35
+      },
+      "rule_latency_ms": 0.01,
+      "neural_latency_ms": 0.009
+    },
+    {
+      "query": "ما هو الصبر في القرآن والسنة؟",
+      "rules": {
+        "quran_weight": 1.12,
+        "hadith_weight": 1.05,
+        "tafsir_weight": 0.98,
+        "external_research_probability": 0.05
+      },
+      "neural": {
+        "quran_weight": 1.12,
+        "hadith_weight": 1.05,
+        "tafsir_weight": 0.98,
+        "external_research_probability": 0.05
+      },
+      "rule_latency_ms": 0.014,
+      "neural_latency_ms": 0.008
+    },
+    {
+      "query": "نماز میں خشوع کیسے پیدا کریں؟",
+      "rules": {
+        "quran_weight": 1.12,
+        "hadith_weight": 1.05,
+        "tafsir_weight": 0.98,
+        "external_research_probability": 0.05
+      },
+      "neural": {
+        "quran_weight": 1.12,
+        "hadith_weight": 1.05,
+        "tafsir_weight": 0.98,
+        "external_research_probability": 0.05
+      },
+      "rule_latency_ms": 0.008,
+      "neural_latency_ms": 0.008
+    },
+    {
+      "query": "namaz ke arkan aur sharait kya hain?",
+      "rules": {
+        "quran_weight": 1.12,
+        "hadith_weight": 1.05,
+        "tafsir_weight": 0.98,
+        "external_research_probability": 0.05
+      },
+      "neural": {
+        "quran_weight": 1.12,
+        "hadith_weight": 1.05,
+        "tafsir_weight": 0.98,
+        "external_research_probability": 0.05
+      },
+      "rule_latency_ms": 0.008,
+      "neural_latency_ms": 0.007
+    }
+  ]
+}

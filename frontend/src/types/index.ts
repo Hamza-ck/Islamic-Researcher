@@ -6,7 +6,9 @@ export type ResponseStyle = 'concise' | 'scholarly' | 'detailed';
 
 export type DetailLevel = 'brief' | 'standard' | 'comprehensive';
 
-export type AppView = 'chat' | 'library' | 'scholars';
+export type AppView = 'chat' | 'library' | 'scholars' | 'collections';
+
+export type ResearchMode = 'quick' | 'research' | 'deep';
 
 export interface ScholarGrade {
   scholar?: string;
@@ -21,6 +23,8 @@ export interface RawSearchResult {
   citation: string;
   score: number;
   arabic?: string | null;
+  origin?: 'internal' | 'external' | 'offline_demo';
+  source_priority?: string;
   metadata: {
     surah?: number;
     ayah?: number;
@@ -51,12 +55,49 @@ export interface SearchResponse {
 }
 
 export interface SynthesisMetadata {
-  confidence: string;       // "high" | "medium" | "low"
+  confidence: string;
+  confidence_score?: number;
   model_used: string;
   tokens_used: number;
   latency_ms: number;
   response_style: string;
   temperature: number;
+  verification?: Record<string, unknown>;
+  research_plan?: Record<string, unknown> | null;
+}
+
+export interface ResearchClaim {
+  id: string;
+  text: string;
+  sources: string[];
+  support: 'supported' | 'weak' | 'unsupported';
+}
+
+export interface ResearchContradiction {
+  summary: string;
+  source_ids: string[];
+}
+
+export interface ResearchTimelineStep {
+  stage: string;
+  detail?: string;
+  at?: string;
+}
+
+export interface ResearchPayload {
+  research_id: string;
+  query: string;
+  status: string;
+  mode: ResearchMode;
+  answer: string;
+  claims: ResearchClaim[];
+  sources: RawSearchResult[];
+  contradictions: ResearchContradiction[];
+  confidence: { level: string; score: number; note?: string };
+  sufficiency: { status: string; score: number; reason: string; missing_information?: string[] };
+  external_research_used: boolean;
+  timeline: ResearchTimelineStep[];
+  metadata?: Record<string, unknown>;
 }
 
 export interface AskResponse {
@@ -91,10 +132,13 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   mode: SearchMode;
+  researchMode?: ResearchMode;
   results?: RawSearchResult[];
   metadata?: SynthesisMetadata | null;
   queryId?: string | null;
   timestamp: number;
+  isDemo?: boolean;
+  research?: ResearchPayload | null;
 }
 
 export interface HistorySession {

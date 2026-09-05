@@ -2,13 +2,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { 
   AppView, 
   SearchMode, 
+  ResearchMode,
   FolioFilterState, 
   SynthesisOptions, 
   ChatMessage, 
   HistorySession, 
   RawSearchResult 
 } from './types';
-import { executeFolioQuery, checkBackendHealth, getStoredBackendUrl, submitFeedback } from './services/api';
+import { executeFolioQuery, executeResearchQuery, checkBackendHealth, getStoredBackendUrl, submitFeedback } from './services/api';
+import { CollectionsPanel } from './components/CollectionsPanel';
 import { GeminiSidebar } from './components/GeminiSidebar';
 import { GeminiHero } from './components/GeminiHero';
 import { GeminiInputDeck } from './components/GeminiInputDeck';
@@ -37,6 +39,8 @@ export function App() {
   // Input & Search States
   const [query, setQuery] = useState('');
   const [mode, setMode] = useState<SearchMode>('ask');
+  const [researchMode, setResearchMode] = useState<ResearchMode>('research');
+  const [allowExternal, setAllowExternal] = useState(false);
   const [filterState, setFilterState] = useState<FolioFilterState>({
     types: [],
     collections: [],
@@ -150,13 +154,17 @@ export function App() {
     setQuery('');
 
     try {
-      const response = await executeFolioQuery(
-        activeMode,
-        activeQuery,
-        filterState,
-        8,
-        activeMode === 'ask' ? synthesisOptions : undefined,
-      );
+      const response =
+        activeMode === 'search'
+          ? await executeFolioQuery(activeMode, activeQuery, filterState, 8)
+          : await executeResearchQuery(
+              activeQuery,
+              researchMode,
+              filterState,
+              researchMode === 'deep' ? 12 : 8,
+              synthesisOptions,
+              allowExternal,
+            );
 
       setIsLiveBackend(response.isLive);
 
@@ -167,10 +175,13 @@ export function App() {
           ? `Found ${response.results.length} authentic passages matching your inquiry:`
           : 'No relevant passages were found in the corpus. Try adjusting your search keywords or removing specific filters.'),
         mode: activeMode,
+        researchMode,
         results: response.results,
         metadata: response.metadata,
         queryId: response.queryId,
         timestamp: Date.now(),
+        isDemo: response.isDemo || !response.isLive,
+        research: response.research || null,
       };
 
       const finalMessages = [...updatedMessages, assistantMsg];
@@ -371,6 +382,10 @@ export function App() {
                   onFilterChange={setFilterState}
                   synthesisOptions={synthesisOptions}
                   onSynthesisOptionsChange={setSynthesisOptions}
+                  researchMode={researchMode}
+                  onResearchModeChange={setResearchMode}
+                  allowExternal={allowExternal}
+                  onAllowExternalChange={setAllowExternal}
                 />
               </div>
             </div>
@@ -385,6 +400,18 @@ export function App() {
                   handleExecuteResearch(prompt, mode);
                 }}
                 arabicFontSize={arabicFontSize}
+              />
+            </div>
+          )}
+
+          {/* VIEW 4: CURATED COLLECTIONS */}
+          {activeView === 'collections' && (
+            <div className="flex-1 pb-16">
+              <CollectionsPanel
+                onStartResearch={(prompt, rMode) => {
+                  setResearchMode(rMode);
+                  handleExecuteResearch(prompt, 'ask');
+                }}
               />
             </div>
           )}

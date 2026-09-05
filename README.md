@@ -18,6 +18,7 @@ A source-grounded Islamic research/search application designed to run locally or
 - Quran/Hadith entries remain atomic; long commentary is split on semantic boundaries rather than blindly slicing characters.
 - Gemini is optional. Without a key, `/ask` degrades to a retrieval-only evidence summary rather than hallucinating.
 - Added local FAISS index builder and retrieval evaluation scaffold.
+- Implementation plan progress: see `docs/CURRENT_STATE.md` and `docs/MIGRATION.md`.
 
 ## Zero-budget architecture
 
@@ -47,7 +48,10 @@ QDRANT_COLLECTION=Islamic_Researcher
 GEMINI_API_KEY=             # optional
 GEMINI_MODEL=gemini-2.5-flash
 ALLOW_REMOTE_LLM=true
+ENABLE_RERANKER=false
 ```
+
+`GET /health`, `GET /stats`, and `GET /sources/{id}` are live. `POST /search` and `POST /ask` remain the current research/ask surface while sessioned `/research` is being added. Copy `backend/.env.example`.
 
 ## Important scholarly safeguards
 

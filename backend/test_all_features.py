@@ -1,5 +1,13 @@
-import search
-from models import AskRequest, SearchRequest
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from backend import search
+from backend.models import AskRequest, SearchRequest
+
 
 def run_tests():
     print("=== Testing search.py with filters ===")
@@ -28,6 +36,7 @@ def run_tests():
     print(f"5. Cache hit OK -> {t_cached:.3f} ms (sub-millisecond speed!)")
 
     print("\n=== ALL SEARCH & FILTER VERIFICATION TESTS PASSED SUCCESSFULLY! ===")
+
 
 if __name__ == "__main__":
     run_tests()

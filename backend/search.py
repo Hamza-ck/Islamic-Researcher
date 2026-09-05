@@ -1,13 +1,13 @@
 import time
 from functools import lru_cache
+from backend.core.config import RETRIEVAL_CANDIDATES
 from backend.retrieval.hybrid import search as hybrid_search
 from backend.retrieval.reranker import rerank
-from backend.retrieval.quality import grade_rank
 
 @lru_cache(maxsize=512)
 def _cached(query,top_k,types_key,collections_key,min_grade):
     types=list(types_key) if types_key else None; collections=list(collections_key) if collections_key else None
-    candidates=hybrid_search(query,top_k=max(top_k*3,20),types=types,collections=collections,min_grade=min_grade)
+    candidates=hybrid_search(query,top_k=max(top_k*3,RETRIEVAL_CANDIDATES),types=types,collections=collections,min_grade=min_grade)
     return rerank(query,candidates,top_k)
 
 def search(query,top_k=10,types=None,collections=None,min_grade=None,research=False):

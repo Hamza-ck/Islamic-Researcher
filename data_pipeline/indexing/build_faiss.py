@@ -72,6 +72,18 @@ def main():
             print(f"Committed checkpoint: {index.ntotal}/{total_records} passages indexed ({index.ntotal*100/total_records:.1f}%) -> {out}")
 
     print(f"FAISS index build complete: {index.ntotal} vectors written to {out}")
+    try:
+        from backend.core.index_meta import write_faiss_metadata
+        write_faiss_metadata(
+            embedding_model=model_name,
+            ntotal=int(index.ntotal),
+            dimension=int(index.d),
+            corpus_path=Path(CORPUS_PATH),
+            faiss_path=out,
+        )
+        print(f"Wrote index metadata to {out.with_name('index.meta.json')}")
+    except Exception as e:
+        print(f"Warning: could not write index metadata ({e})")
 
 if __name__ == '__main__':
     main()
